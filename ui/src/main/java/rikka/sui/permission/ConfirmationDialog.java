@@ -122,8 +122,9 @@ public class ConfirmationDialog {
         }
 
         binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
-        binding.title.setText(HtmlCompat.fromHtml(
-                String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
+        binding.title.setText(resources.getString(R.string.permission_request_title));
+        binding.message.setText(HtmlCompat.fromHtml(
+            String.format(resources.getString(R.string.permission_warning_template), label)));
         binding.button1.setText(resources.getString(R.string.grant_dialog_button_allow_always));
         binding.button2.setText(resources.getString(R.string.grant_dialog_button_allow_one_time));
         binding.button3.setText(resources.getString(R.string.grant_dialog_button_deny_and_dont_ask_again));

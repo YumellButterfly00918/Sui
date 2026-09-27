@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="permission_warning_template"><![CDATA[要允许<b>%1$s</b>%2$s吗？]]></string>
+    <string name="permission_request_title">权限请求</string>
+    <string name="permission_warning_template"><![CDATA[允许<b>%1$s</b>使用 Shizuku 吗？]]></string>
     <string name="permission_description">拥有设备的完全访问权限</string>
     <string name="grant_dialog_button_allow_always">始终允许</string>
-    <string name="grant_dialog_button_allow_one_time">仅限这一次</string>
+    <string name="grant_dialog_button_allow_one_time">允许一次</string>
     <string name="grant_dialog_button_deny">拒绝</string>
-    <string name="grant_dialog_button_deny_and_dont_ask_again">拒绝，不要再询问</string>
+    <string name="grant_dialog_button_deny_and_dont_ask_again">拒绝</string>
     <string name="brackets_format">%1$s（%2$s）</string>
     <string name="management_title">超级用户管理</string>
     <string name="management_load_error">无法加载应用列表：%1$s</string>

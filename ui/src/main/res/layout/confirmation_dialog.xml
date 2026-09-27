@@ -4,7 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="24dp"
+    android:minHeight="520dp"
     android:elevation="8dp"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="32dp"
+    android:paddingBottom="32dp"
     tools:background="@drawable/confirmation_dialog_background">
 
     <LinearLayout
@@ -14,37 +19,51 @@
 
         <ImageView
             android:id="@android:id/icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="20dp"
             android:importantForAccessibility="no"
-            android:tint="?android:colorAccent"
+            android:tint="@color/permission_dialog_text"
             android:tintMode="src_in"
             tools:src="@drawable/ic_su_24" />
 
         <TextView
             android:id="@android:id/title"
-            style="@android:style/TextAppearance.DeviceDefault.WindowTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp"
-            android:layout_marginBottom="24dp"
             android:gravity="center"
-            tools:text="Allow %s to have full access of the device?" />
+            android:text="@string/permission_request_title"
+            android:textColor="@color/permission_dialog_text"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="Permission Request" />
+
+        <TextView
+            android:id="@+id/message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="28dp"
+            android:gravity="center"
+            android:textColor="@color/permission_dialog_secondary_text"
+            android:textSize="16sp"
+            tools:text="Allow App Name to use Shizuku?" />
 
         <TextView
             android:id="@android:id/button1"
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:minHeight="56dp"
-            android:padding="8dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/confirmation_button_blue"
+            android:gravity="center"
+            android:minHeight="52dp"
+            android:padding="12dp"
             android:textAllCaps="false"
-            android:textColor="?android:attr/colorAccent"
+            android:textColor="@color/permission_dialog_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
             tools:text="Allow all the time"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
@@ -53,11 +72,15 @@
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:minHeight="56dp"
-            android:padding="8dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/confirmation_button_blue"
+            android:gravity="center"
+            android:minHeight="52dp"
+            android:padding="12dp"
             android:textAllCaps="false"
-            android:textColor="?android:attr/colorAccent"
+            android:textColor="@color/permission_dialog_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
             tools:text="Only this time"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
@@ -66,11 +89,14 @@
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:minHeight="56dp"
-            android:padding="8dp"
+            android:background="@drawable/confirmation_button_red"
+            android:gravity="center"
+            android:minHeight="52dp"
+            android:padding="12dp"
             android:textAllCaps="false"
-            android:textColor="?android:attr/colorAccent"
+            android:textColor="@color/permission_dialog_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
             tools:text="Deny"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
