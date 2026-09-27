@@ -59,11 +59,12 @@ public class SystemDialogRootView extends FrameLayout {
     }
 
     public final void show(WindowManager.LayoutParams lp) {
-        if (windowManager == null) {
-            throw new IllegalStateException("WindowManager is unavailable for system dialog");
+        try {
+            windowManager.addView(this, lp);
+            requestFocus();
+        } catch (Exception e) {
+            LOGGER.w(e, "addView");
         }
-        windowManager.addView(this, lp);
-        requestFocus();
     }
 
     public final void dismiss() {

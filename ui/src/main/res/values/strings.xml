@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="permission_request_title">Permission Request</string>
-    <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to use Shizuku?]]></string>
+    <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
     <string name="permission_description">have the full access of the device</string>
-    <string name="grant_dialog_button_allow_always">Always Allow</string>
-    <string name="grant_dialog_button_allow_one_time">Allow Once</string>
+    <string name="grant_dialog_button_allow_always">Allow all the time</string>
+    <string name="grant_dialog_button_allow_one_time">Only this time</string>
     <string name="grant_dialog_button_deny">Deny</string>
-    <string name="grant_dialog_button_deny_and_dont_ask_again">Deny</string>
+    <string name="grant_dialog_button_deny_and_dont_ask_again">Deny, don\'t ask again</string>
     <string name="brackets_format">%1$s (%2$s)</string>
     <string name="management_title">Superuser management</string>
     <string name="management_load_error">Failed to load app list: %1$s</string>

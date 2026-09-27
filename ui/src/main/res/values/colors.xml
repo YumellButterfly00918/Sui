@@ -11,10 +11,4 @@
     <color name="color_secondary_dark">@color/material_teal_300</color>
     <color name="color_secondary_variant_dark">@color/material_teal_300</color>
     <color name="color_surface_dark">#1b1b1b</color>
-
-    <color name="permission_dialog_background">#1A1B20</color>
-    <color name="permission_dialog_text">#F4F1F8</color>
-    <color name="permission_dialog_secondary_text">#CAC6D0</color>
-    <color name="permission_dialog_button_blue">#3478F6</color>
-    <color name="permission_dialog_button_red">#D83B3B</color>
 </resources>

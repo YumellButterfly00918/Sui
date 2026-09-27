@@ -34,7 +34,6 @@ import android.graphics.PixelFormat;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -62,34 +61,16 @@ public class ConfirmationDialog {
 
     private final Context context;
     private final Resources resources;
+    private final LayoutInflater layoutInflater;
 
     public ConfirmationDialog(Application application, Resources resources) {
         this.context = application;
         this.resources = resources;
+        this.layoutInflater = LayoutInflater.from(application);
     }
 
     public void show(int requestUid, int requestPid, String requestPackageName, int requestCode) {
-        try {
-            HandlerKt.getMainHandler().post(() -> {
-                try {
-                    showInternal(requestUid, requestPid, requestPackageName, requestCode);
-                } catch (Throwable t) {
-                    Log.e("SuiPermission", "FATAL CRASH IN DIALOG", t);
-                    rejectAfterDialogFailure(requestUid, requestPid, requestCode);
-                }
-            });
-        } catch (Throwable t) {
-            Log.e("SuiPermission", "FATAL CRASH IN DIALOG", t);
-            rejectAfterDialogFailure(requestUid, requestPid, requestCode);
-        }
-    }
-
-    private void rejectAfterDialogFailure(int requestUid, int requestPid, int requestCode) {
-        try {
-            setResult(requestUid, requestPid, requestCode, false, true);
-        } catch (Throwable resultError) {
-            Log.e("SuiPermission", "Failed to reject after dialog initialization failure", resultError);
-        }
+        HandlerKt.getMainHandler().post(() -> showInternal(requestUid, requestPid, requestPackageName, requestCode));
     }
 
     private void setResult(int requestUid, int requestPid, int requestCode, boolean allowed, boolean onetime) {
@@ -105,7 +86,6 @@ public class ConfirmationDialog {
     }
 
     private void showInternal(int requestUid, int requestPid, String requestPackageName, int requestCode) {
-        LayoutInflater layoutInflater = LayoutInflater.from(context);
         Resources.Theme theme = context.getTheme();
         boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) != 0;
         if (isNight) {
@@ -115,6 +95,7 @@ public class ConfirmationDialog {
         }
 
         SystemDialogRootView root = new SystemDialogRootView(context) {
+
             @Override
             public boolean onBackPressed() {
                 return false;
@@ -142,9 +123,8 @@ public class ConfirmationDialog {
         }
 
         binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
-        binding.title.setText(resources.getString(R.string.permission_request_title));
-        binding.message.setText(HtmlCompat.fromHtml(
-            String.format(resources.getString(R.string.permission_warning_template), label)));
+        binding.title.setText(HtmlCompat.fromHtml(
+                String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
         binding.button1.setText(resources.getString(R.string.grant_dialog_button_allow_always));
         binding.button2.setText(resources.getString(R.string.grant_dialog_button_allow_one_time));
         binding.button3.setText(resources.getString(R.string.grant_dialog_button_deny_and_dont_ask_again));
