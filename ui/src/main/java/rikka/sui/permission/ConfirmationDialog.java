@@ -62,12 +62,10 @@ public class ConfirmationDialog {
 
     private final Context context;
     private final Resources resources;
-    private final LayoutInflater layoutInflater;
 
     public ConfirmationDialog(Application application, Resources resources) {
         this.context = application;
         this.resources = resources;
-        this.layoutInflater = LayoutInflater.from(application);
     }
 
     public void show(int requestUid, int requestPid, String requestPackageName, int requestCode) {
@@ -107,6 +105,7 @@ public class ConfirmationDialog {
     }
 
     private void showInternal(int requestUid, int requestPid, String requestPackageName, int requestCode) {
+        LayoutInflater layoutInflater = LayoutInflater.from(context);
         Resources.Theme theme = context.getTheme();
         boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) != 0;
         if (isNight) {
