@@ -27,13 +27,15 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManagerHidden;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,16 +63,34 @@ public class ConfirmationDialog {
 
     private final Context context;
     private final Resources resources;
-    private final LayoutInflater layoutInflater;
 
     public ConfirmationDialog(Application application, Resources resources) {
         this.context = application;
         this.resources = resources;
-        this.layoutInflater = LayoutInflater.from(application);
     }
 
     public void show(int requestUid, int requestPid, String requestPackageName, int requestCode) {
-        HandlerKt.getMainHandler().post(() -> showInternal(requestUid, requestPid, requestPackageName, requestCode));
+        try {
+            HandlerKt.getMainHandler().post(() -> {
+                try {
+                    showInternal(requestUid, requestPid, requestPackageName, requestCode);
+                } catch (Throwable t) {
+                    Log.e("SuiPermission", "CRASH", t);
+                    rejectAfterDialogFailure(requestUid, requestPid, requestCode);
+                }
+            });
+        } catch (Throwable t) {
+            Log.e("SuiPermission", "CRASH", t);
+            rejectAfterDialogFailure(requestUid, requestPid, requestCode);
+        }
+    }
+
+    private void rejectAfterDialogFailure(int requestUid, int requestPid, int requestCode) {
+        try {
+            setResult(requestUid, requestPid, requestCode, false, true);
+        } catch (Throwable resultError) {
+            Log.e("SuiPermission", "Failed to reject after dialog initialization failure", resultError);
+        }
     }
 
     private void setResult(int requestUid, int requestPid, int requestCode, boolean allowed, boolean onetime) {
@@ -86,8 +106,12 @@ public class ConfirmationDialog {
     }
 
     private void showInternal(int requestUid, int requestPid, String requestPackageName, int requestCode) {
+        LayoutInflater layoutInflater = LayoutInflater.from(context);
         Resources.Theme theme = context.getTheme();
-        boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) != 0;
+        boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+            == Configuration.UI_MODE_NIGHT_YES;
+        float density = resources.getDisplayMetrics().density;
+        int primaryTextColor = isNight ? Color.WHITE : Color.rgb(32, 33, 36);
         if (isNight) {
             theme.applyStyle(android.R.style.Theme_DeviceDefault_Dialog, true);
         } else {
@@ -123,16 +147,23 @@ public class ConfirmationDialog {
         }
 
         binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
+        binding.icon.setColorFilter(primaryTextColor);
         binding.title.setText(HtmlCompat.fromHtml(
                 String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
+        binding.title.setTextColor(primaryTextColor);
+        binding.button1.setTextColor(Color.WHITE);
+        binding.button2.setTextColor(Color.WHITE);
+        binding.button3.setTextColor(Color.WHITE);
         binding.button1.setText(resources.getString(R.string.grant_dialog_button_allow_always));
         binding.button2.setText(resources.getString(R.string.grant_dialog_button_allow_one_time));
         binding.button3.setText(resources.getString(R.string.grant_dialog_button_deny_and_dont_ask_again));
 
-        ColorStateList buttonTextColor = resources.getColorStateList(R.color.confirmation_dialog_button_text, theme);
-        binding.button1.setTextColor(buttonTextColor);
-        binding.button2.setTextColor(buttonTextColor);
-        binding.button3.setTextColor(buttonTextColor);
+        binding.getRoot().setBackground(createRoundedBackground(
+            isNight ? Color.rgb(27, 27, 31) : Color.WHITE, 28 * density));
+        binding.getRoot().setClipToOutline(true);
+        binding.button1.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
+        binding.button2.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
+        binding.button3.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
 
         binding.button1.setOnClickListener(v -> {
             setResult(requestUid, requestPid, requestCode, true, false);
@@ -151,9 +182,6 @@ public class ConfirmationDialog {
         TextViewKt.applyCountdown(binding.button2, 1, null, 0);
         TextViewKt.applyCountdown(binding.button3, 1, null, 0);
 
-        binding.getRoot().setBackground(resources.getDrawable(R.drawable.confirmation_dialog_background, theme));
-        binding.getRoot().setClipToOutline(true);
-
         WindowManager.LayoutParams attr = new WindowManager.LayoutParams();
         attr.width = ViewGroup.LayoutParams.MATCH_PARENT;
         attr.height = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -167,5 +195,13 @@ public class ConfirmationDialog {
         WindowKt.setPrivateFlags(attr, WindowKt.getPrivateFlags(attr) | WindowKt.getSYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS());
 
         root.show(attr);
+    }
+
+    private static GradientDrawable createRoundedBackground(int color, float cornerRadiusPx) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColor(color);
+        drawable.setCornerRadius(cornerRadiusPx);
+        return drawable;
     }
 }

@@ -11,5 +11,4 @@
     <color name="color_secondary_dark">@color/material_teal_300</color>
     <color name="color_secondary_variant_dark">@color/material_teal_300</color>
     <color name="color_surface_dark">#1b1b1b</color>
-    <color name="permission_dialog_background">#F5F5F5</color>
 </resources>
