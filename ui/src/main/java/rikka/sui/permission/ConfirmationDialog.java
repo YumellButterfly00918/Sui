@@ -34,6 +34,7 @@ import android.graphics.PixelFormat;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -70,7 +71,27 @@ public class ConfirmationDialog {
     }
 
     public void show(int requestUid, int requestPid, String requestPackageName, int requestCode) {
-        HandlerKt.getMainHandler().post(() -> showInternal(requestUid, requestPid, requestPackageName, requestCode));
+        try {
+            HandlerKt.getMainHandler().post(() -> {
+                try {
+                    showInternal(requestUid, requestPid, requestPackageName, requestCode);
+                } catch (Throwable t) {
+                    Log.e("SuiPermission", "FATAL CRASH IN DIALOG", t);
+                    rejectAfterDialogFailure(requestUid, requestPid, requestCode);
+                }
+            });
+        } catch (Throwable t) {
+            Log.e("SuiPermission", "FATAL CRASH IN DIALOG", t);
+            rejectAfterDialogFailure(requestUid, requestPid, requestCode);
+        }
+    }
+
+    private void rejectAfterDialogFailure(int requestUid, int requestPid, int requestCode) {
+        try {
+            setResult(requestUid, requestPid, requestCode, false, true);
+        } catch (Throwable resultError) {
+            Log.e("SuiPermission", "Failed to reject after dialog initialization failure", resultError);
+        }
     }
 
     private void setResult(int requestUid, int requestPid, int requestCode, boolean allowed, boolean onetime) {
