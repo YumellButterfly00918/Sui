@@ -1,4 +1,14 @@
 <resources>
 
     <style name="AppTheme" parent="Theme.Light" />
+
+    <style name="Theme.Sui.PermissionDialog" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="ShapeAppearance.Sui.PermissionDialog" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="ThemeOverlay.Sui.PermissionDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearance">@style/ShapeAppearance.Sui.PermissionDialog</item>
+    </style>
 </resources>
