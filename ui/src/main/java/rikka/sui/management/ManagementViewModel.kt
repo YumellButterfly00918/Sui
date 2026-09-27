@@ -36,18 +36,19 @@ import rikka.sui.R
 import rikka.sui.util.AppInfoCache
 import rikka.sui.util.AppInfoComparator
 import rikka.sui.util.BridgeServiceClient
-import rikka.sui.util.UserHandleCompat
 
 class ManagementViewModel : ViewModel() {
 
     private val fullList = ArrayList<AppInfo>()
     private var reloadJob: Job? = null
+    private var hasPublishedList = false
 
     val appList = MutableLiveData<Resource<List<AppInfo>>>(null)
+    val syncCompleted = MutableLiveData<Unit>()
 
     private fun handleList() {
         val list = fullList.sortedWith(AppInfoComparator()).toList()
-
+        hasPublishedList = true
         appList.postValue(Resource.success(list))
     }
 
@@ -62,71 +63,90 @@ class ManagementViewModel : ViewModel() {
     }
 
     fun reload(context: Context) {
-        reload(context, null)
+        reload(context, silent = false)
     }
 
-    fun onPackageRemoved(context: Context, packageName: String, userId: Int?) {
-        reload(context, packageName, userId)
+    fun sync(context: Context) {
+        reload(context, silent = true)
     }
 
-    private fun reload(context: Context, removedPackage: String?, removedUserId: Int? = null) {
-        if (fullList.isEmpty() && appList.value?.status != Status.SUCCESS) {
-            appList.postValue(Resource.loading(null))
-        }
+    fun onPackageRemoved(context: Context) {
+        sync(context)
+    }
 
+    private fun reload(context: Context, silent: Boolean) {
         reloadJob?.cancel()
         reloadJob = viewModelScope.launch(Dispatchers.IO) {
             var stage = "requesting applications from the Sui service"
             try {
-                if (fullList.isEmpty()) {
-                    AppInfoCache.read(context)?.let {
-                        fullList.addAll(it)
+                if (!hasPublishedList) {
+                    val cached = AppInfoCache.read(context)
+                    if (cached != null) {
+                        fullList.addAll(cached)
                         handleList()
+                    } else if (!silent) {
+                        appList.postValue(Resource.loading(null))
                     }
-                }
-
-                if (removedPackage != null) {
-                    fullList.removeAll {
-                        it.packageInfo.packageName == removedPackage
-                                && (removedUserId == null || UserHandleCompat.getUserId(it.packageInfo.applicationInfo.uid) == removedUserId)
-                    }
-                    AppInfoCache.write(context, fullList)
-                    handleList()
                 }
 
                 val pm = context.packageManager
                 val result = BridgeServiceClient.getApplications(-1 /* ALL */)
-                stage = "loading labels and icons for ${result.size} applications"
-                val iconSize = context.resources.getDimensionPixelSize(R.dimen.expected_app_icon_max_size)
+                stage = "loading labels for ${result.size} applications"
                 result.forEach {
-                    val appInfo = it.packageInfo.applicationInfo
-                    it.label = appInfo.loadLabel(pm).toString()
-                    it.icon = try {
-                        val bitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
-                        val drawable = appInfo.loadIcon(pm)
-                        drawable.setBounds(0, 0, iconSize, iconSize)
-                        drawable.draw(Canvas(bitmap))
-                        bitmap
-                    } catch (e: Throwable) {
-                        Log.w("SuiSettings", "Failed to cache icon for ${appInfo.packageName}", e)
-                        null
-                    }
+                    it.label = it.packageInfo.applicationInfo.loadLabel(pm).toString()
                 }
 
-                fullList.clear()
-                fullList.addAll(result)
-                AppInfoCache.write(context, fullList)
+                if (!hasPublishedList || !sameApps(fullList, result)) {
+                    stage = "loading icons for ${result.size} applications"
+                    val iconSize = context.resources.getDimensionPixelSize(R.dimen.expected_app_icon_max_size)
+                    result.forEach {
+                        val appInfo = it.packageInfo.applicationInfo
+                        it.icon = try {
+                            val bitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
+                            val drawable = appInfo.loadIcon(pm)
+                            drawable.setBounds(0, 0, iconSize, iconSize)
+                            drawable.draw(Canvas(bitmap))
+                            bitmap
+                        } catch (e: Throwable) {
+                            Log.w("SuiSettings", "Failed to cache icon for ${appInfo.packageName}", e)
+                            null
+                        }
+                    }
 
-                Log.i("SuiSettings", "Loaded metadata for ${result.size} applications")
-                handleList()
+                    fullList.clear()
+                    fullList.addAll(result)
+                    AppInfoCache.write(context, fullList)
+
+                    Log.i("SuiSettings", "Loaded metadata for ${result.size} applications")
+                    handleList()
+                }
             } catch (e: CancellationException) {
 
             } catch (e: Throwable) {
                 Log.e("SuiSettings", "Failed while $stage", e)
-                if (fullList.isEmpty()) {
+                if (!hasPublishedList && !silent) {
+                    appList.postValue(Resource.error(e, null))
+                } else if (!silent) {
                     appList.postValue(Resource.error(e, null))
                 }
+            } finally {
+                syncCompleted.postValue(Unit)
             }
+        }
+    }
+
+    private fun sameApps(current: List<AppInfo>, fresh: List<AppInfo>): Boolean {
+        if (current.size != fresh.size) return false
+
+        val currentByIdentity = current.associateBy {
+            it.packageInfo.packageName to it.packageInfo.applicationInfo.uid
+        }
+        return fresh.all { app ->
+            val identity = app.packageInfo.packageName to app.packageInfo.applicationInfo.uid
+            val cached = currentByIdentity[identity] ?: return@all false
+            cached.flags == app.flags
+                    && cached.label?.toString() == app.label?.toString()
+                    && cached.packageInfo.lastUpdateTime == app.packageInfo.lastUpdateTime
         }
     }
 }

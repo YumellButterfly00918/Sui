@@ -43,7 +43,6 @@ import rikka.sui.R
 import rikka.sui.app.AppFragment
 import rikka.sui.databinding.ManagementBinding
 import rikka.sui.model.AppInfo
-import rikka.sui.util.UserHandleCompat
 import rikka.widget.borderview.BorderView.OnBorderVisibilityChangedListener
 
 class ManagementFragment : AppFragment() {
@@ -59,11 +58,7 @@ class ManagementFragment : AppFragment() {
             if (intent.action != Intent.ACTION_PACKAGE_REMOVED || intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
                 return
             }
-            intent.data?.schemeSpecificPart?.let {
-                val uid = intent.getIntExtra(Intent.EXTRA_UID, -1)
-                val userId = if (uid >= 0) UserHandleCompat.getUserId(uid) else null
-                viewModel.onPackageRemoved(context, it, userId)
-            }
+            viewModel.onPackageRemoved(context)
         }
     }
 
@@ -111,6 +106,9 @@ class ManagementFragment : AppFragment() {
                 else -> {}
             }
         }
+        viewModel.syncCompleted.observe(viewLifecycleOwner) {
+            binding.swipeRefresh.isRefreshing = false
+        }
     }
 
     override fun onStart() {
@@ -125,7 +123,7 @@ class ManagementFragment : AppFragment() {
         }
         if (hasBeenStopped) {
             hasBeenStopped = false
-            viewModel.reload(requireContext())
+            viewModel.sync(requireContext())
         }
     }
 

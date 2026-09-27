@@ -37,7 +37,7 @@ import java.io.IOException
 internal object AppInfoCache {
 
     private const val FILE_NAME = "management-apps.cache"
-    private const val CACHE_VERSION = 1
+    private const val CACHE_VERSION = 2
     private const val MAX_APP_COUNT = 100_000
     private const val MAX_ICON_BYTES = 16 * 1024 * 1024
 
@@ -47,7 +47,8 @@ internal object AppInfoCache {
 
         return try {
             DataInputStream(BufferedInputStream(file.openRead())).use { input ->
-                if (input.readInt() != CACHE_VERSION) return@use null
+                val version = input.readInt()
+                if (version !in 1..CACHE_VERSION) return@use null
                 val count = input.readInt()
                 if (count !in 0..MAX_APP_COUNT) throw IOException("Invalid cached app count: $count")
 
@@ -55,6 +56,7 @@ internal object AppInfoCache {
                     repeat(count) {
                         val packageName = input.readUTF()
                         val uid = input.readInt()
+                        val lastUpdateTime = if (version >= 2) input.readLong() else 0L
                         val flags = input.readInt()
                         val label = input.readUTF()
                         val iconSize = input.readInt()
@@ -71,6 +73,7 @@ internal object AppInfoCache {
                         val packageInfo = PackageInfo().apply {
                             this.packageName = packageName
                             this.applicationInfo = applicationInfo
+                            this.lastUpdateTime = lastUpdateTime
                         }
                         add(AppInfo().apply {
                             this.packageInfo = packageInfo
@@ -98,6 +101,7 @@ internal object AppInfoCache {
                 apps.forEach { app ->
                     data.writeUTF(app.packageInfo.packageName)
                     data.writeInt(app.packageInfo.applicationInfo.uid)
+                    data.writeLong(app.packageInfo.lastUpdateTime)
                     data.writeInt(app.flags)
                     data.writeUTF(app.label?.toString().orEmpty())
                     val icon = app.icon
