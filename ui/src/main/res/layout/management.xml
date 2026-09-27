@@ -4,24 +4,22 @@
     android:id="@+id/swipe_refresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:scrollbars="none"
     android:paddingStart="@dimen/rd_activity_horizontal_margin"
     android:paddingEnd="@dimen/rd_activity_horizontal_margin">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <ProgressBar
-            android:id="@android:id/progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:fadeScrollbars="false">
 
         <rikka.widget.borderview.BorderRecyclerView
             android:id="@android:id/list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scrollbars="none"
+            android:fadeScrollbars="false"
             android:clipToPadding="false"
             android:layoutAnimation="@anim/stagger_layout_animation"
             android:paddingTop="?actionBarSize"

@@ -29,7 +29,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import android.widget.Toast
-import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
 import rikka.core.res.resolveColor
@@ -37,7 +36,6 @@ import rikka.core.res.resolveDimension
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 import rikka.lifecycle.viewModels
-import rikka.recyclerview.addFastScroller
 import rikka.recyclerview.fixEdgeEffect
 import rikka.sui.R
 import rikka.sui.app.AppFragment
@@ -50,7 +48,7 @@ class ManagementFragment : AppFragment() {
     private var _binding: ManagementBinding? = null
     private val binding: ManagementBinding get() = _binding!!
 
-    private val viewModel by viewModels { ManagementViewModel().apply { reload(requireAppActivity()) } }
+    private val viewModel by viewModels { ManagementViewModel().apply { sync(requireAppActivity()) } }
     private val adapter = ManagementAdapter()
     private var hasBeenStopped = false
     private val packageRemovedReceiver = object : BroadcastReceiver() {
@@ -77,7 +75,7 @@ class ManagementFragment : AppFragment() {
                 }
             adapter = this@ManagementFragment.adapter
             (itemAnimator as DefaultItemAnimator).supportsChangeAnimations = false
-            addFastScroller(binding.swipeRefresh)
+            isVerticalScrollBarEnabled = false
             fixEdgeEffect()
 
             layoutAnimationListener = object : Animation.AnimationListener {
@@ -100,7 +98,6 @@ class ManagementFragment : AppFragment() {
 
         viewModel.appList.observe(viewLifecycleOwner) {
             when (it?.status) {
-                Status.LOADING -> onLoading()
                 Status.SUCCESS -> onSuccess(it)
                 Status.ERROR -> onError(it.error)
                 else -> {}
@@ -138,22 +135,10 @@ class ManagementFragment : AppFragment() {
         _binding = null
     }
 
-    private fun onLoading() {
-        binding.apply {
-            swipeRefresh.isEnabled = false
-            swipeRefresh.isRefreshing = false
-            progress.isVisible = true
-            list.isGone = true
-        }
-
-        adapter.updateData(emptyList())
-    }
-
     private fun onError(e: Throwable) {
         binding.apply {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
-            progress.isGone = true
             list.isVisible = true
         }
 
@@ -169,16 +154,11 @@ class ManagementFragment : AppFragment() {
         binding.apply {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
-            progress.isGone = true
             list.isVisible = true
         }
 
         data.data?.let {
             adapter.updateData(it)
-
-            if (it.isNotEmpty()) {
-                binding.list.scheduleLayoutAnimation()
-            }
         }
     }
 }

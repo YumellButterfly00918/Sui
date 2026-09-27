@@ -21,6 +21,7 @@ package rikka.sui.management
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -41,6 +42,7 @@ class ManagementViewModel : ViewModel() {
 
     private val fullList = ArrayList<AppInfo>()
     private var reloadJob: Job? = null
+    @Volatile
     private var hasPublishedList = false
 
     val appList = MutableLiveData<Resource<List<AppInfo>>>(null)
@@ -49,7 +51,12 @@ class ManagementViewModel : ViewModel() {
     private fun handleList() {
         val list = fullList.sortedWith(AppInfoComparator()).toList()
         hasPublishedList = true
-        appList.postValue(Resource.success(list))
+        val result = Resource.success(list)
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            appList.value = result
+        } else {
+            appList.postValue(result)
+        }
     }
 
     fun invalidateList() {
@@ -75,20 +82,18 @@ class ManagementViewModel : ViewModel() {
     }
 
     private fun reload(context: Context, silent: Boolean) {
+        if (!hasPublishedList) {
+            AppInfoCache.read(context)?.let {
+                fullList.clear()
+                fullList.addAll(it)
+                handleList()
+            }
+        }
+
         reloadJob?.cancel()
         reloadJob = viewModelScope.launch(Dispatchers.IO) {
             var stage = "requesting applications from the Sui service"
             try {
-                if (!hasPublishedList) {
-                    val cached = AppInfoCache.read(context)
-                    if (cached != null) {
-                        fullList.addAll(cached)
-                        handleList()
-                    } else if (!silent) {
-                        appList.postValue(Resource.loading(null))
-                    }
-                }
-
                 val pm = context.packageManager
                 val result = BridgeServiceClient.getApplications(-1 /* ALL */)
                 stage = "loading labels for ${result.size} applications"
@@ -124,9 +129,7 @@ class ManagementViewModel : ViewModel() {
 
             } catch (e: Throwable) {
                 Log.e("SuiSettings", "Failed while $stage", e)
-                if (!hasPublishedList && !silent) {
-                    appList.postValue(Resource.error(e, null))
-                } else if (!silent) {
+                if (!silent) {
                     appList.postValue(Resource.error(e, null))
                 }
             } finally {
