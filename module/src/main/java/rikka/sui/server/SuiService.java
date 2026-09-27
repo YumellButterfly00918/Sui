@@ -421,9 +421,27 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
         }
     }
 
+    private static final class ApplicationQueryContext {
+        String stage = "checking manager permission";
+        int userId = -1;
+        String packageName = "<none>";
+    }
+
     private ParcelableListSlice<AppInfo> getApplications(int userId) {
+        ApplicationQueryContext context = new ApplicationQueryContext();
+        try {
+            return getApplications(userId, context);
+        } catch (RuntimeException | Error e) {
+            LOGGER.e(e, "getApplications failed at %s (requestedUser=%d, user=%d, package=%s)",
+                    context.stage, userId, context.userId, context.packageName);
+            throw e;
+        }
+    }
+
+    private ParcelableListSlice<AppInfo> getApplications(int userId, ApplicationQueryContext context) {
         enforceManagerPermission("getApplications");
 
+        context.stage = "resolving users";
         List<Integer> users = new ArrayList<>();
         if (userId == -1) {
             users.addAll(UserManagerApis.getUserIdsNoThrow());
@@ -437,9 +455,14 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
 
         List<AppInfo> list = new ArrayList<>();
         for (int user : users) {
+            context.userId = user;
+            context.packageName = "<package query>";
+            context.stage = "querying installed packages";
             List<PackageInfo> packages = PackageManagerApis.getInstalledPackagesNoThrow(0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user);
             LOGGER.i("getApplications: user %d package query returned %d packages", user, packages.size());
             for (PackageInfo pi : packages) {
+                context.packageName = pi == null ? "<null PackageInfo>" : pi.packageName;
+                context.stage = "processing package";
                 if (pi.applicationInfo == null
                         || Refine.<PackageInfoHidden>unsafeCast(pi).overlayTarget != null
                         || (pi.applicationInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0)
@@ -514,6 +537,8 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
                 list.add(item);
             }
         }
+        context.stage = "creating result parcel";
+        context.packageName = "<complete>";
         LOGGER.i("getApplications: returning %d applications", list.size());
         return new ParcelableListSlice<>(list);
     }
