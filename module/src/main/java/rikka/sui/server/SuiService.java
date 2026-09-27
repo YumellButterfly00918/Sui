@@ -585,17 +585,40 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
     public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
         //LOGGER.d("transact: code=%d, calling uid=%d", code, Binder.getCallingUid());
         if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
-            data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
-            int userId = data.readInt();
-            ParcelableListSlice<AppInfo> result = getApplications(userId);
-            reply.writeNoException();
-            if (result != null) {
-                reply.writeInt(1);
-                result.writeToParcel(reply, android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
-            } else {
-                reply.writeInt(0);
+            int callerUid = Binder.getCallingUid();
+            int userId = Integer.MIN_VALUE;
+            String stage = "entry";
+            LOGGER.i("getApplications transaction entered: code=0x%08x callerUid=%d", code, callerUid);
+            try {
+                stage = "enforceInterface";
+                data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
+
+                stage = "read userId";
+                userId = data.readInt();
+
+                stage = "getApplications";
+                ParcelableListSlice<AppInfo> result = getApplications(userId);
+
+                stage = "writeNoException";
+                reply.writeNoException();
+
+                stage = "write result marker";
+                if (result != null) {
+                    reply.writeInt(1);
+
+                    stage = "write ParcelableListSlice";
+                    result.writeToParcel(reply, android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+                } else {
+                    reply.writeInt(0);
+                }
+
+                LOGGER.i("getApplications transaction completed: userId=%d", userId);
+                return true;
+            } catch (RuntimeException | Error e) {
+                LOGGER.e(e, "getApplications transaction failed: stage=%s code=0x%08x callerUid=%d userId=%d",
+                        stage, code, callerUid, userId);
+                throw e;
             }
-            return true;
         } else if (code == ServerConstants.BINDER_TRANSACTION_showManagement) {
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
             showManagement();
