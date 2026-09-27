@@ -462,16 +462,35 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
             context.packageName = "<package query>";
             context.stage = "querying installed packages";
             List<PackageInfo> packages = PackageManagerApis.getInstalledPackagesNoThrow(0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user);
+            if (packages == null) {
+                LOGGER.w("getApplications: user %d package query returned null", user);
+                continue;
+            }
             LOGGER.i("getApplications: user %d package query returned %d packages", user, packages.size());
             for (PackageInfo pi : packages) {
-                context.packageName = pi == null ? "<null PackageInfo>" : pi.packageName;
+                if (pi == null) {
+                    context.packageName = "<null PackageInfo>";
+                    LOGGER.w("skip %d: null PackageInfo", user);
+                    continue;
+                }
+
+                String packageName = pi.packageName;
+                context.packageName = packageName != null ? packageName : "<unnamed package>";
                 context.stage = "processing package";
-                if (pi.applicationInfo == null
-                        || Refine.<PackageInfoHidden>unsafeCast(pi).overlayTarget != null
-                        || (pi.applicationInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0)
+                ApplicationInfo appInfo = pi.applicationInfo;
+                if (appInfo == null) {
+                    LOGGER.w("skip %d:%s: null ApplicationInfo", user, context.packageName);
+                    continue;
+                }
+                if (packageName == null || packageName.isEmpty()) {
+                    LOGGER.w("skip %d: PackageInfo has no package name", user);
+                    continue;
+                }
+                if (Refine.<PackageInfoHidden>unsafeCast(pi).overlayTarget != null
+                        || (appInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0)
                     continue;
 
-                int uid = pi.applicationInfo.uid;
+                int uid = appInfo.uid;
                 int appId = UserHandleCompat.getAppId(uid);
                 if (uid == systemUiUid)
                     continue;
@@ -483,13 +502,16 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
                 if (flags == 0) {
                     String dataDir;
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        dataDir = pi.applicationInfo.deviceProtectedDataDir;
+                        dataDir = appInfo.deviceProtectedDataDir;
                     } else {
-                        dataDir = pi.applicationInfo.dataDir;
+                        dataDir = appInfo.dataDir;
                     }
 
-                    boolean hasApk = MapUtil.getOrPut(existenceCache, pi.applicationInfo.sourceDir, () -> new File(pi.applicationInfo.sourceDir).exists());
-                    boolean hasData = MapUtil.getOrPut(existenceCache, dataDir, () -> new File(dataDir).exists());
+                    String sourceDir = appInfo.sourceDir;
+                    boolean hasApk = sourceDir != null
+                            && MapUtil.getOrPut(existenceCache, sourceDir, () -> new File(sourceDir).exists());
+                    boolean hasData = dataDir != null
+                            && MapUtil.getOrPut(existenceCache, dataDir, () -> new File(dataDir).exists());
 
                     // Installed (or hidden): hasApk && hasData
                     // Uninstalled but keep data: !hasApk && hasData
