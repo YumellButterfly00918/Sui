@@ -430,6 +430,8 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
         String packageName = "<none>";
     }
 
+    private static final String SHIZUKU_PERMISSION = "moe.shizuku.manager.permission.API_V23";
+
     private ParcelableListSlice<AppInfo> getApplications(int userId) {
         ApplicationQueryContext context = new ApplicationQueryContext();
         try {
@@ -461,7 +463,8 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
             context.userId = user;
             context.packageName = "<package query>";
             context.stage = "querying installed packages";
-            List<PackageInfo> packages = PackageManagerApis.getInstalledPackagesNoThrow(0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user);
+                List<PackageInfo> packages = PackageManagerApis.getInstalledPackagesNoThrow(
+                    PackageManager.GET_PERMISSIONS | 0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user);
             if (packages == null) {
                 LOGGER.w("getApplications: user %d package query returned null", user);
                 continue;
@@ -486,6 +489,9 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
                     LOGGER.w("skip %d: PackageInfo has no package name", user);
                     continue;
                 }
+                if ((appInfo.flags & ApplicationInfo.FLAG_INSTALLED) == 0
+                        || !requestsShizukuPermission(pi))
+                    continue;
                 if (Refine.<PackageInfoHidden>unsafeCast(pi).overlayTarget != null
                         || (appInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0)
                     continue;
@@ -555,6 +561,8 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
                 pi.receivers = null;
                 pi.services = null;
                 pi.providers = null;
+                pi.requestedPermissions = null;
+                pi.requestedPermissionsFlags = null;
 
                 AppInfo item = new AppInfo();
                 item.packageInfo = pi;
@@ -566,6 +574,18 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
         context.packageName = "<complete>";
         LOGGER.i("getApplications: returning %d applications", list.size());
         return new ParcelableListSlice<>(list);
+    }
+
+    private static boolean requestsShizukuPermission(PackageInfo packageInfo) {
+        if (packageInfo.requestedPermissions == null) {
+            return false;
+        }
+        for (String permission : packageInfo.requestedPermissions) {
+            if (SHIZUKU_PERMISSION.equals(permission)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void showManagement() {

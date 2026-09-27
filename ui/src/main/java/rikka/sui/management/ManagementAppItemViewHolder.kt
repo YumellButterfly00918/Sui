@@ -160,14 +160,17 @@ class ManagementAppItemViewHolder(private val binding: ManagementAppItemBinding)
         val pm = itemView.context.packageManager
         val userId = UserHandleCompat.getUserId(uid)
 
-        icon.setImageDrawable(ai.loadIcon(pm))
-
-        loadIconJob = AppIconCache.loadIconBitmapAsync(context, ai, ai.uid / 100000, icon)
+        if (data.icon != null) {
+            icon.setImageBitmap(data.icon)
+        } else {
+            icon.setImageDrawable(ai.loadIcon(pm))
+            loadIconJob = AppIconCache.loadIconBitmapAsync(context, ai, ai.uid / 100000, icon)
+        }
 
         name.text = if (userId != UserHandleCompat.myUserId()) {
-            "${ai.loadLabel(pm)} - ($userId)"
+            "${data.label ?: ai.loadLabel(pm)} - ($userId)"
         } else {
-            ai.loadLabel(pm)
+            data.label ?: ai.loadLabel(pm)
         }
         pkg.text = ai.packageName
 

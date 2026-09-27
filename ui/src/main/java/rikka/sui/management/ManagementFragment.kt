@@ -18,6 +18,11 @@
  */
 package rikka.sui.management
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +43,7 @@ import rikka.sui.R
 import rikka.sui.app.AppFragment
 import rikka.sui.databinding.ManagementBinding
 import rikka.sui.model.AppInfo
+import rikka.sui.util.UserHandleCompat
 import rikka.widget.borderview.BorderView.OnBorderVisibilityChangedListener
 
 class ManagementFragment : AppFragment() {
@@ -47,6 +53,19 @@ class ManagementFragment : AppFragment() {
 
     private val viewModel by viewModels { ManagementViewModel().apply { reload(requireAppActivity()) } }
     private val adapter = ManagementAdapter()
+    private var hasBeenStopped = false
+    private val packageRemovedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != Intent.ACTION_PACKAGE_REMOVED || intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                return
+            }
+            intent.data?.schemeSpecificPart?.let {
+                val uid = intent.getIntExtra(Intent.EXTRA_UID, -1)
+                val userId = if (uid >= 0) UserHandleCompat.getUserId(uid) else null
+                viewModel.onPackageRemoved(context, it, userId)
+            }
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = ManagementBinding.inflate(inflater, container, false)
@@ -92,6 +111,28 @@ class ManagementFragment : AppFragment() {
                 else -> {}
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val filter = IntentFilter(Intent.ACTION_PACKAGE_REMOVED).apply {
+            addDataScheme("package")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(packageRemovedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            requireContext().registerReceiver(packageRemovedReceiver, filter)
+        }
+        if (hasBeenStopped) {
+            hasBeenStopped = false
+            viewModel.reload(requireContext())
+        }
+    }
+
+    override fun onStop() {
+        requireContext().unregisterReceiver(packageRemovedReceiver)
+        hasBeenStopped = true
+        super.onStop()
     }
 
     override fun onDestroyView() {

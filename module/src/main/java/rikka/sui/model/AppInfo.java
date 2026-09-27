@@ -20,6 +20,7 @@
 package rikka.sui.model;
 
 import android.content.pm.PackageInfo;
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -28,6 +29,7 @@ public class AppInfo implements Parcelable {
 
     public PackageInfo packageInfo;
     public int flags;
+    public Bitmap icon = null;
     public CharSequence label = null;
 
     public AppInfo() {
@@ -36,6 +38,8 @@ public class AppInfo implements Parcelable {
     protected AppInfo(Parcel in) {
         packageInfo = in.readParcelable(PackageInfo.class.getClassLoader());
         flags = in.readInt();
+        label = in.readString();
+        icon = in.readParcelable(Bitmap.class.getClassLoader());
     }
 
     public static final Creator<AppInfo> CREATOR = new Creator<AppInfo>() {
@@ -59,5 +63,7 @@ public class AppInfo implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelable(packageInfo, flags);
         dest.writeInt(this.flags);
+        dest.writeString(label != null ? label.toString() : null);
+        dest.writeParcelable(icon, flags);
     }
 }
