@@ -139,6 +139,11 @@ public class BridgeServiceClient {
         }
         Log.i(TAG, "getApplications target binder: class=" + targetBinder.getClass().getName()
                 + " descriptor=" + descriptor + " localInterface=" + localInterfaceClass);
+        try {
+            Log.i(TAG, "IShizukuService.getVersion()=" + currentService.getVersion());
+        } catch (Throwable e) {
+            Log.e(TAG, "IShizukuService.getVersion() failed", e);
+        }
 
         Log.d(TAG, "Requesting applications for user " + userId);
         Parcel data = Parcel.obtain();

@@ -80,6 +80,8 @@ import rikka.sui.util.UserHandleCompat;
 @OptIn(markerClass = androidx.core.os.BuildCompat.PrereleaseSdkCheck.class)
 public class SuiService extends Service<SuiUserServiceManager, SuiClientManager, SuiConfigManager> {
 
+    private static final String DIAGNOSTIC_BUILD_MARKER = "android16-ipc-probe-20260927-01";
+
     private static SuiService instance;
     private static String filesPath;
 
@@ -88,6 +90,7 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
     }
 
     public static void main(String filesPath) {
+        LOGGER.i("SUI_SERVER_BUILD_MARKER=%s", DIAGNOSTIC_BUILD_MARKER);
         LOGGER.i("starting server...");
 
         RishConfig.setLibraryPath(System.getProperty("sui.library.path"));
