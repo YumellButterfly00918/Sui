@@ -19,6 +19,7 @@
 package rikka.sui.management
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -57,19 +58,24 @@ class ManagementViewModel : ViewModel() {
         appList.postValue(Resource.loading(null))
 
         viewModelScope.launch(Dispatchers.IO) {
+            var stage = "requesting applications from the Sui service"
             try {
                 val pm = context.packageManager
-                val result = BridgeServiceClient.getApplications(-1 /* ALL */).apply {
-                    forEach { it.label = it.packageInfo.applicationInfo.loadLabel(pm) }
+                val result = BridgeServiceClient.getApplications(-1 /* ALL */)
+                stage = "loading labels for ${result.size} applications"
+                result.forEach {
+                    it.label = it.packageInfo.applicationInfo.loadLabel(pm)
                 }
 
                 fullList.clear()
                 fullList.addAll(result)
 
+                Log.i("SuiSettings", "Loaded labels for ${result.size} applications")
                 handleList()
             } catch (e: CancellationException) {
 
             } catch (e: Throwable) {
+                Log.e("SuiSettings", "Failed while $stage", e)
                 appList.postValue(Resource.error(e, null))
             }
         }

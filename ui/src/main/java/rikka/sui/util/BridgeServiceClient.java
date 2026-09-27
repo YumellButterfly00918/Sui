@@ -22,6 +22,7 @@ package rikka.sui.util;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.ServiceManager;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -33,6 +34,7 @@ import rikka.sui.model.AppInfo;
 
 public class BridgeServiceClient {
 
+    private static final String TAG = "SuiSettings";
     private static final int BINDER_TRANSACTION_getApplications = 10001;
 
     private static IBinder binder;
@@ -44,27 +46,36 @@ public class BridgeServiceClient {
     private static final int BRIDGE_ACTION_GET_BINDER = 2;
 
     private static final IBinder.DeathRecipient DEATH_RECIPIENT = () -> {
+        Log.w(TAG, "Sui service binder died");
         binder = null;
         service = null;
     };
 
     private static IBinder requestBinderFromBridge() {
-        IBinder binder = ServiceManager.getService(BRIDGE_SERVICE_NAME);
-        if (binder == null) return null;
+        IBinder activityBinder = ServiceManager.getService(BRIDGE_SERVICE_NAME);
+        if (activityBinder == null) {
+            Log.e(TAG, "Activity service binder is unavailable");
+            return null;
+        }
 
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         try {
             data.writeInterfaceToken(BRIDGE_SERVICE_DESCRIPTOR);
             data.writeInt(BRIDGE_ACTION_GET_BINDER);
-            binder.transact(BRIDGE_TRANSACTION_CODE, data, reply, 0);
+            if (!activityBinder.transact(BRIDGE_TRANSACTION_CODE, data, reply, 0)) {
+                Log.e(TAG, "Activity service did not handle the Sui bridge transaction");
+                return null;
+            }
             reply.readException();
             IBinder received = reply.readStrongBinder();
             if (received != null) {
+                Log.i(TAG, "Received Sui service binder from activity bridge");
                 return received;
             }
+            Log.e(TAG, "Activity bridge returned an empty Sui service binder");
         } catch (Throwable e) {
-            e.printStackTrace();
+            Log.e(TAG, "Failed to request Sui service binder from activity bridge", e);
         } finally {
             data.recycle();
             reply.recycle();
@@ -101,29 +112,48 @@ public class BridgeServiceClient {
     }
 
     public static List<AppInfo> getApplications(int userId) {
+        IShizukuService currentService = getService();
+        if (currentService == null) {
+            throw new IllegalStateException("Sui service binder is unavailable");
+        }
+
+        Log.d(TAG, "Requesting applications for user " + userId);
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
-        List<AppInfo> result;
         try {
             data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
             data.writeInt(userId);
+            boolean handled;
             try {
-                getService().asBinder().transact(BINDER_TRANSACTION_getApplications, data, reply, 0);
+                handled = currentService.asBinder().transact(BINDER_TRANSACTION_getApplications, data, reply, 0);
             } catch (Throwable e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Sui getApplications transaction failed", e);
             }
+            if (!handled) {
+                throw new IllegalStateException("Sui service did not handle getApplications transaction");
+            }
+
             reply.readException();
+            List<AppInfo> result;
             if ((0 != reply.readInt())) {
                 //noinspection unchecked
                 result = ParcelableListSlice.CREATOR.createFromParcel(reply).getList();
             } else {
-                result = null;
+                throw new IllegalStateException("Sui service returned no application list");
             }
+
+            if (result == null) {
+                throw new IllegalStateException("Sui service returned a null application list");
+            }
+            Log.i(TAG, "Received " + result.size() + " applications for user " + userId);
+            return result;
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Failed to retrieve applications for user " + userId, e);
+            throw e;
         } finally {
             reply.recycle();
             data.recycle();
         }
-        return result;
     }
 
 }

@@ -61,6 +61,8 @@ https://github.com/RikkaApps/Shizuku-API
 
 Clone with `git clone --recurse-submodules`.
 
+The project uses Java 17 with the Gradle 8.0 wrapper. With SDKMAN installed, run `sdk env install` and `sdk env` from the project directory before building.
+
 Gradle tasks:
 
 `Flavor` could be `Riru` and `Zygisk`, and `BuildType` could be `Debug` and `Release`.

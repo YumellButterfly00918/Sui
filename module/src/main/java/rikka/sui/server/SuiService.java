@@ -430,13 +430,16 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
         } else {
             users.add(userId);
         }
+        LOGGER.i("getApplications: querying %d users", users.size());
 
         Map<String, Boolean> existenceCache = new ArrayMap<>();
         Map<String, Boolean> hasComponentsCache = new ArrayMap<>();
 
         List<AppInfo> list = new ArrayList<>();
         for (int user : users) {
-            for (PackageInfo pi : PackageManagerApis.getInstalledPackagesNoThrow(0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user)) {
+            List<PackageInfo> packages = PackageManagerApis.getInstalledPackagesNoThrow(0x00002000 /*MATCH_UNINSTALLED_PACKAGES*/, user);
+            LOGGER.i("getApplications: user %d package query returned %d packages", user, packages.size());
+            for (PackageInfo pi : packages) {
                 if (pi.applicationInfo == null
                         || Refine.<PackageInfoHidden>unsafeCast(pi).overlayTarget != null
                         || (pi.applicationInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0)
@@ -511,6 +514,7 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
                 list.add(item);
             }
         }
+        LOGGER.i("getApplications: returning %d applications", list.size());
         return new ParcelableListSlice<>(list);
     }
 

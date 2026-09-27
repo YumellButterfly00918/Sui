@@ -23,6 +23,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
+import android.widget.Toast
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -116,6 +117,13 @@ class ManagementFragment : AppFragment() {
             progress.isGone = true
             list.isVisible = true
         }
+
+        val detail = e.localizedMessage ?: e.javaClass.simpleName
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.management_load_error, detail.take(160)),
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun onSuccess(data: Resource<List<AppInfo>?>) {
