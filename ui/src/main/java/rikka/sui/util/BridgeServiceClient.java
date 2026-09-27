@@ -36,6 +36,7 @@ public class BridgeServiceClient {
 
     private static final String TAG = "SuiSettings";
     private static final int BINDER_TRANSACTION_getApplications = 10001;
+    private static final int BINDER_TRANSACTION_getDiagnosticBuildId = 10004;
 
     private static IBinder binder;
     private static IShizukuService service;
@@ -139,11 +140,7 @@ public class BridgeServiceClient {
         }
         Log.i(TAG, "getApplications target binder: class=" + targetBinder.getClass().getName()
                 + " descriptor=" + descriptor + " localInterface=" + localInterfaceClass);
-        try {
-            Log.i(TAG, "IShizukuService.getVersion()=" + currentService.getVersion());
-        } catch (Throwable e) {
-            Log.e(TAG, "IShizukuService.getVersion() failed", e);
-        }
+        logDiagnosticBuildId(targetBinder);
 
         Log.d(TAG, "Requesting applications for user " + userId);
         Parcel data = Parcel.obtain();
@@ -180,6 +177,29 @@ public class BridgeServiceClient {
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to retrieve applications for user " + userId, e);
             throw e;
+        } finally {
+            reply.recycle();
+            data.recycle();
+        }
+    }
+
+    private static void logDiagnosticBuildId(IBinder targetBinder) {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        try {
+            data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
+            boolean handled = targetBinder.transact(BINDER_TRANSACTION_getDiagnosticBuildId, data, reply, 0);
+            Log.i(TAG, "diagnostic build-ID transact result: handled=" + handled
+                    + " replySize=" + reply.dataSize());
+            if (!handled) {
+                Log.w(TAG, "Sui diagnostic build-ID transaction is not supported by this service");
+                return;
+            }
+
+            reply.readException();
+            Log.i(TAG, "SUI_SERVER_BUILD_ID=" + reply.readString());
+        } catch (Throwable e) {
+            Log.e(TAG, "Failed to read Sui diagnostic build ID", e);
         } finally {
             reply.recycle();
             data.recycle();

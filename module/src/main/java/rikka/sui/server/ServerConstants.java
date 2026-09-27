@@ -28,5 +28,6 @@ public class ServerConstants {
     public static final int BINDER_TRANSACTION_getApplications = 10001;
     public static final int BINDER_TRANSACTION_showManagement = 10002;
     public static final int BINDER_TRANSACTION_openApk = 10003;
+    public static final int BINDER_TRANSACTION_getDiagnosticBuildId = 10004;
 
 }

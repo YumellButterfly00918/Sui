@@ -80,7 +80,7 @@ import rikka.sui.util.UserHandleCompat;
 @OptIn(markerClass = androidx.core.os.BuildCompat.PrereleaseSdkCheck.class)
 public class SuiService extends Service<SuiUserServiceManager, SuiClientManager, SuiConfigManager> {
 
-    private static final String DIAGNOSTIC_BUILD_MARKER = "android16-ipc-probe-20260927-01";
+    private static final String DIAGNOSTIC_BUILD_MARKER = "android16-ipc-probe-20260927-02";
 
     private static SuiService instance;
     private static String filesPath;
@@ -586,8 +586,14 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
 
     @Override
     public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-        //LOGGER.d("transact: code=%d, calling uid=%d", code, Binder.getCallingUid());
-        if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
+        if (code == ServerConstants.BINDER_TRANSACTION_getDiagnosticBuildId) {
+            data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
+            enforceManagerPermission("getDiagnosticBuildId");
+            reply.writeNoException();
+            reply.writeString(DIAGNOSTIC_BUILD_MARKER);
+            LOGGER.i("diagnostic build ID requested by uid=%d", Binder.getCallingUid());
+            return true;
+        } else if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
             int callerUid = Binder.getCallingUid();
             int userId = Integer.MIN_VALUE;
             String stage = "entry";
