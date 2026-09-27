@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="24dp"
     android:minHeight="520dp"
     android:elevation="8dp"
+    android:background="@drawable/confirmation_dialog_background"
+    android:orientation="vertical"
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
     android:paddingTop="32dp"
     android:paddingBottom="32dp"
     tools:background="@drawable/confirmation_dialog_background">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
 
         <ImageView
             android:id="@android:id/icon"
@@ -50,7 +47,7 @@
             android:textSize="16sp"
             tools:text="Allow App Name to use Shizuku?" />
 
-        <TextView
+        <Button
             android:id="@android:id/button1"
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
@@ -67,7 +64,7 @@
             tools:text="Allow all the time"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
-        <TextView
+        <Button
             android:id="@android:id/button2"
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
@@ -84,7 +81,7 @@
             tools:text="Only this time"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
-        <TextView
+        <Button
             android:id="@android:id/button3"
             style="@android:style/Widget.DeviceDefault.Button.Borderless"
             android:layout_width="match_parent"
@@ -100,6 +97,4 @@
             tools:text="Deny"
             tools:textColor="@color/confirmation_dialog_button_text" />
 
-    </LinearLayout>
-
-</ScrollView>
+</LinearLayout>
