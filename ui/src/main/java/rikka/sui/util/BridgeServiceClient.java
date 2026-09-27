@@ -117,6 +117,29 @@ public class BridgeServiceClient {
             throw new IllegalStateException("Sui service binder is unavailable");
         }
 
+        IBinder targetBinder = currentService.asBinder();
+        if (targetBinder == null) {
+            throw new IllegalStateException("Sui service returned a null binder");
+        }
+
+        String descriptor = "<unavailable>";
+        try {
+            descriptor = targetBinder.getInterfaceDescriptor();
+        } catch (Throwable e) {
+            Log.w(TAG, "Unable to read Sui service binder descriptor", e);
+        }
+
+        String localInterfaceClass;
+        try {
+            Object localInterface = targetBinder.queryLocalInterface("moe.shizuku.server.IShizukuService");
+            localInterfaceClass = localInterface == null ? "null" : localInterface.getClass().getName();
+        } catch (Throwable e) {
+            localInterfaceClass = "<error: " + e.getClass().getName() + ">";
+            Log.w(TAG, "Unable to query local Sui service interface", e);
+        }
+        Log.i(TAG, "getApplications target binder: class=" + targetBinder.getClass().getName()
+                + " descriptor=" + descriptor + " localInterface=" + localInterfaceClass);
+
         Log.d(TAG, "Requesting applications for user " + userId);
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
@@ -125,10 +148,12 @@ public class BridgeServiceClient {
             data.writeInt(userId);
             boolean handled;
             try {
-                handled = currentService.asBinder().transact(BINDER_TRANSACTION_getApplications, data, reply, 0);
+                handled = targetBinder.transact(BINDER_TRANSACTION_getApplications, data, reply, 0);
             } catch (Throwable e) {
                 throw new RuntimeException("Sui getApplications transaction failed", e);
             }
+            Log.i(TAG, "getApplications transact result: handled=" + handled
+                    + " replySize=" + reply.dataSize());
             if (!handled) {
                 throw new IllegalStateException("Sui service did not handle getApplications transaction");
             }
