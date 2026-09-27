@@ -51,12 +51,21 @@ class ManagementFragment : AppFragment() {
     private val viewModel by viewModels { ManagementViewModel().apply { sync(requireAppActivity()) } }
     private val adapter = ManagementAdapter()
     private var hasBeenStopped = false
-    private val packageRemovedReceiver = object : BroadcastReceiver() {
+    private val packageChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action != Intent.ACTION_PACKAGE_REMOVED || intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
-                return
+            when (intent.action) {
+                Intent.ACTION_PACKAGE_ADDED -> {
+                    if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                        viewModel.sync(context)
+                    }
+                }
+                Intent.ACTION_PACKAGE_REPLACED, Intent.ACTION_PACKAGE_FULLY_REMOVED -> viewModel.sync(context)
+                Intent.ACTION_PACKAGE_REMOVED -> {
+                    if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                        viewModel.sync(context)
+                    }
+                }
             }
-            viewModel.onPackageRemoved(context)
         }
     }
 
@@ -110,13 +119,17 @@ class ManagementFragment : AppFragment() {
 
     override fun onStart() {
         super.onStart()
-        val filter = IntentFilter(Intent.ACTION_PACKAGE_REMOVED).apply {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_FULLY_REMOVED)
             addDataScheme("package")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(packageRemovedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            requireContext().registerReceiver(packageChangedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            requireContext().registerReceiver(packageRemovedReceiver, filter)
+            requireContext().registerReceiver(packageChangedReceiver, filter)
         }
         if (hasBeenStopped) {
             hasBeenStopped = false
@@ -125,7 +138,7 @@ class ManagementFragment : AppFragment() {
     }
 
     override fun onStop() {
-        requireContext().unregisterReceiver(packageRemovedReceiver)
+        requireContext().unregisterReceiver(packageChangedReceiver)
         hasBeenStopped = true
         super.onStop()
     }

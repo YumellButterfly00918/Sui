@@ -18,6 +18,7 @@
  */
 package rikka.sui.management
 
+import androidx.recyclerview.widget.DiffUtil
 import rikka.recyclerview.BaseRecyclerViewAdapter
 import rikka.recyclerview.ClassCreatorPool
 import rikka.sui.model.AppInfo
@@ -30,7 +31,9 @@ class ManagementAdapter : BaseRecyclerViewAdapter<ClassCreatorPool>() {
     }
 
     override fun getItemId(position: Int): Long {
-        return getItemAt<Any>(position).hashCode().toLong()
+        val app = getItemAt<AppInfo>(position)
+        val identity = app.packageInfo.packageName.hashCode().toLong() shl 32
+        return identity xor app.packageInfo.applicationInfo.uid.toLong()
     }
 
     override fun onCreateCreatorPool(): ClassCreatorPool {
@@ -38,8 +41,32 @@ class ManagementAdapter : BaseRecyclerViewAdapter<ClassCreatorPool>() {
     }
 
     fun updateData(data: List<AppInfo>) {
-        getItems<Any>().clear()
-        getItems<Any>().addAll(data)
-        notifyDataSetChanged()
+        val oldItems = getItems<AppInfo>().toList()
+        val newItems = data.toList()
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = oldItems.size
+            override fun getNewListSize() = newItems.size
+
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                val oldApp = oldItems[oldItemPosition]
+                val newApp = newItems[newItemPosition]
+                return oldApp.packageInfo.packageName == newApp.packageInfo.packageName
+                        && oldApp.packageInfo.applicationInfo.uid == newApp.packageInfo.applicationInfo.uid
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                val oldApp = oldItems[oldItemPosition]
+                val newApp = newItems[newItemPosition]
+                return oldApp.flags == newApp.flags
+                        && oldApp.label?.toString() == newApp.label?.toString()
+                        && oldApp.packageInfo.lastUpdateTime == newApp.packageInfo.lastUpdateTime
+            }
+        })
+
+        getItems<AppInfo>().apply {
+            clear()
+            addAll(newItems)
+        }
+        diff.dispatchUpdatesTo(this)
     }
 }
