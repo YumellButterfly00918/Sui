@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -95,12 +96,10 @@ class ManagementFragment : AppFragment() {
             text = "Allowed"
             gravity = Gravity.CENTER
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             isClickable = true
             isFocusable = true
-            val horizontalPadding = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics
-            ).toInt()
-            setPadding(horizontalPadding, 0, horizontalPadding, 0)
+            setPadding(0, 0, 0, 0)
             setOnClickListener { toggleGlobalAutoGrant() }
         }
         menu.add(Menu.NONE, MENU_GLOBAL_AUTO_GRANT, Menu.NONE, "Allowed").apply {
