@@ -151,20 +151,12 @@ public class ConfirmationDialog {
         LinearLayout.LayoutParams iconLayoutParams = new LinearLayout.LayoutParams(iconSize, iconSize);
         iconLayoutParams.gravity = Gravity.CENTER_HORIZONTAL;
         binding.icon.setLayoutParams(iconLayoutParams);
-        try {
-            binding.icon.setImageDrawable(pm.getApplicationIcon(requestPackageName));
-        } catch (Throwable e) {
-            LOGGER.e("getApplicationIcon");
-            binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
-        }
+        binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
         binding.icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        binding.icon.setColorFilter(null);
-        GradientDrawable iconStroke = new GradientDrawable();
-        iconStroke.setShape(GradientDrawable.RECTANGLE);
-        iconStroke.setColor(Color.TRANSPARENT);
-        iconStroke.setCornerRadius(24 * density);
-        iconStroke.setStroke(Math.round(2 * density), isNight ? Color.WHITE : Color.BLACK);
-        binding.icon.setBackground(iconStroke);
+        binding.icon.setColorFilter(Color.WHITE);
+        binding.icon.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
+        int iconPadding = Math.round(12 * density);
+        binding.icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
         binding.title.setText(HtmlCompat.fromHtml(
                 String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
         binding.title.setTextColor(primaryTextColor);
