@@ -49,7 +49,6 @@ import rikka.html.text.HtmlCompat;
 import rikka.sui.R;
 import rikka.sui.databinding.ConfirmationDialogBinding;
 import rikka.sui.ktx.HandlerKt;
-import rikka.sui.ktx.TextViewKt;
 import rikka.sui.ktx.WindowKt;
 import rikka.sui.util.AppLabel;
 import rikka.sui.util.BridgeServiceClient;
@@ -157,6 +156,9 @@ public class ConfirmationDialog {
         binding.button1.setText(resources.getString(R.string.grant_dialog_button_allow_always));
         binding.button2.setText(resources.getString(R.string.grant_dialog_button_allow_one_time));
         binding.button3.setText(resources.getString(R.string.grant_dialog_button_deny_and_dont_ask_again));
+        binding.button1.setEnabled(true);
+        binding.button2.setEnabled(true);
+        binding.button3.setEnabled(true);
 
         binding.getRoot().setBackground(createRoundedBackground(
             isNight ? Color.rgb(27, 27, 31) : Color.WHITE, 28 * density));
@@ -177,10 +179,6 @@ public class ConfirmationDialog {
             setResult(requestUid, requestPid, requestCode, false, false);
             root.dismiss();
         });
-
-        TextViewKt.applyCountdown(binding.button1, 1, null, 0);
-        TextViewKt.applyCountdown(binding.button2, 1, null, 0);
-        TextViewKt.applyCountdown(binding.button3, 1, null, 0);
 
         WindowManager.LayoutParams attr = new WindowManager.LayoutParams();
         attr.width = ViewGroup.LayoutParams.MATCH_PARENT;
