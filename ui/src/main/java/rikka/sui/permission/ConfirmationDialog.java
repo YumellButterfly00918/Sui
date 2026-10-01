@@ -159,8 +159,14 @@ public class ConfirmationDialog {
         }
         binding.icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         binding.icon.setColorFilter(null);
-        binding.icon.setBackground(null);
-        binding.icon.setPadding(0, 0, 0, 0);
+        GradientDrawable iconStroke = new GradientDrawable();
+        iconStroke.setShape(GradientDrawable.RECTANGLE);
+        iconStroke.setColor(Color.TRANSPARENT);
+        iconStroke.setCornerRadius(24 * density);
+        iconStroke.setStroke(Math.round(2 * density), isNight ? Color.WHITE : Color.BLACK);
+        binding.icon.setBackground(iconStroke);
+        int iconInset = Math.round(8 * density);
+        binding.icon.setPadding(iconInset, iconInset, iconInset, iconInset);
         binding.title.setText(HtmlCompat.fromHtml(
                 String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
         binding.title.setTextColor(primaryTextColor);
