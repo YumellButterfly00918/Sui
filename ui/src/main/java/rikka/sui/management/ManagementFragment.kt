@@ -22,7 +22,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -39,6 +38,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
 import rikka.core.res.resolveColor
 import rikka.core.res.resolveDimension
+import rikka.core.res.resolveColorStateList
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 import rikka.lifecycle.viewModels
@@ -118,9 +118,14 @@ class ManagementFragment : AppFragment() {
     }
 
     private fun updateGlobalAutoGrantAppearance() {
-        globalAutoGrantAction?.setTextColor(
-            Color.parseColor(if (globalAutoGrantEnabled) "#93A8DF" else "#B5B5B7")
-        )
+        val theme = requireContext().theme
+        val textColor = if (globalAutoGrantEnabled) {
+            theme.resolveColor(androidx.appcompat.R.attr.colorAccent)
+        } else {
+            theme.resolveColorStateList(android.R.attr.textColorTertiary)?.defaultColor
+                ?: theme.resolveColor(android.R.attr.textColorSecondary)
+        }
+        globalAutoGrantAction?.setTextColor(textColor)
         globalAutoGrantAction?.isSelected = globalAutoGrantEnabled
     }
 
