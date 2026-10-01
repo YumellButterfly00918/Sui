@@ -41,6 +41,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import java.util.Objects;
 
@@ -146,7 +148,10 @@ public class ConfirmationDialog {
         }
 
         binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
-        binding.icon.setColorFilter(primaryTextColor);
+        int iconSize = Math.round(56 * density);
+        binding.icon.setLayoutParams(new LinearLayout.LayoutParams(iconSize, iconSize));
+        binding.icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        binding.icon.setColorFilter(Color.WHITE);
         binding.icon.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
         int iconPadding = Math.round(12 * density);
         binding.icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
