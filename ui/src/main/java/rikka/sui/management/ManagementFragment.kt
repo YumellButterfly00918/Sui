@@ -97,13 +97,15 @@ class ManagementFragment : AppFragment() {
             gravity = Gravity.CENTER
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            visibility = View.VISIBLE
             isClickable = true
             isFocusable = true
             setPadding(0, 0, 0, 0)
             setOnClickListener { toggleGlobalAutoGrant() }
         }
         menu.add(Menu.NONE, MENU_GLOBAL_AUTO_GRANT, Menu.NONE, "Allowed").apply {
-            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            isVisible = true
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT)
             setActionView(actionView)
         }
         globalAutoGrantAction = actionView
