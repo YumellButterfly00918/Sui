@@ -22,12 +22,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -41,15 +49,22 @@ import rikka.sui.R
 import rikka.sui.app.AppFragment
 import rikka.sui.databinding.ManagementBinding
 import rikka.sui.model.AppInfo
+import rikka.sui.util.BridgeServiceClient
 import rikka.widget.borderview.BorderView.OnBorderVisibilityChangedListener
 
 class ManagementFragment : AppFragment() {
+
+    private companion object {
+        const val MENU_GLOBAL_AUTO_GRANT = 0x535549
+    }
 
     private var _binding: ManagementBinding? = null
     private val binding: ManagementBinding get() = _binding!!
 
     private val viewModel by viewModels { ManagementViewModel().apply { sync(requireAppActivity()) } }
     private val adapter = ManagementAdapter()
+    private var globalAutoGrantEnabled = false
+    private var globalAutoGrantAction: TextView? = null
     private var hasBeenStopped = false
     private val packageChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -67,6 +82,56 @@ class ManagementFragment : AppFragment() {
                 }
             }
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        val actionView = TextView(requireContext()).apply {
+            text = "Allowed"
+            gravity = Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            isClickable = true
+            isFocusable = true
+            val horizontalPadding = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics
+            ).toInt()
+            setPadding(horizontalPadding, 0, horizontalPadding, 0)
+            setOnClickListener { toggleGlobalAutoGrant() }
+        }
+        menu.add(Menu.NONE, MENU_GLOBAL_AUTO_GRANT, Menu.NONE, "Allowed").apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            setActionView(actionView)
+        }
+        globalAutoGrantAction = actionView
+        try {
+            globalAutoGrantEnabled = BridgeServiceClient.getGlobalAutoGrantEnabled()
+        } catch (e: Throwable) {
+            Log.e("SuiSettings", "Failed to read global auto-grant state", e)
+        }
+        updateGlobalAutoGrantAppearance()
+    }
+
+    private fun toggleGlobalAutoGrant() {
+        val enabled = !globalAutoGrantEnabled
+        try {
+            globalAutoGrantEnabled = BridgeServiceClient.setGlobalAutoGrantEnabled(enabled)
+            updateGlobalAutoGrantAppearance()
+        } catch (e: Throwable) {
+            Log.e("SuiSettings", "Failed to update global auto-grant state", e)
+            Toast.makeText(requireContext(), e.localizedMessage ?: "Unable to update setting", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateGlobalAutoGrantAppearance() {
+        globalAutoGrantAction?.setTextColor(
+            Color.parseColor(if (globalAutoGrantEnabled) "#93A8DF" else "#B5B5B7")
+        )
+        globalAutoGrantAction?.isSelected = globalAutoGrantEnabled
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

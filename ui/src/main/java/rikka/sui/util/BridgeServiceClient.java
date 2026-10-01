@@ -37,6 +37,8 @@ public class BridgeServiceClient {
     private static final String TAG = "SuiSettings";
     private static final int BINDER_TRANSACTION_getApplications = 10001;
     private static final int BINDER_TRANSACTION_getDiagnosticBuildId = 10004;
+    private static final int BINDER_TRANSACTION_getGlobalAutoGrant = 10005;
+    private static final int BINDER_TRANSACTION_setGlobalAutoGrant = 10006;
 
     private static IBinder binder;
     private static IShizukuService service;
@@ -177,6 +179,43 @@ public class BridgeServiceClient {
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to retrieve applications for user " + userId, e);
             throw e;
+        } finally {
+            reply.recycle();
+            data.recycle();
+        }
+    }
+
+    public static boolean getGlobalAutoGrantEnabled() {
+        return transactGlobalAutoGrant(BINDER_TRANSACTION_getGlobalAutoGrant, null);
+    }
+
+    public static boolean setGlobalAutoGrantEnabled(boolean enabled) {
+        return transactGlobalAutoGrant(BINDER_TRANSACTION_setGlobalAutoGrant, enabled);
+    }
+
+    private static boolean transactGlobalAutoGrant(int transactionCode, Boolean enabled) {
+        IShizukuService currentService = getService();
+        if (currentService == null || currentService.asBinder() == null) {
+            throw new IllegalStateException("Sui service binder is unavailable");
+        }
+
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        try {
+            data.writeInterfaceToken("moe.shizuku.server.IShizukuService");
+            if (enabled != null) {
+                data.writeInt(enabled ? 1 : 0);
+            }
+            boolean handled = currentService.asBinder().transact(transactionCode, data, reply, 0);
+            if (!handled) {
+                throw new IllegalStateException("Sui service did not handle global auto-grant transaction");
+            }
+            reply.readException();
+            return reply.readInt() != 0;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new RuntimeException("Global auto-grant transaction failed", e);
         } finally {
             reply.recycle();
             data.recycle();

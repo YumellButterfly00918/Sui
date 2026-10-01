@@ -22,6 +22,8 @@ public class SuiDatabase {
 
     private static final String DATABASE_PATH;
     private static final String UID_CONFIG_TABLE = "uid_configs";
+    private static final String GLOBAL_CONFIG_TABLE = "global_config";
+    private static final String GLOBAL_AUTO_GRANT_KEY = "global_auto_grant";
     private static SQLiteDatabase databaseInternal;
 
     private static SQLiteDatabase createDatabase(boolean allowRetry) {
@@ -29,6 +31,7 @@ public class SuiDatabase {
         try {
             database = SQLiteDataBaseRemoteCompat.openDatabase(DATABASE_PATH, null);
             database.execSQL("CREATE TABLE IF NOT EXISTS uid_configs(uid INTEGER PRIMARY KEY, flags INTEGER);");
+            database.execSQL("CREATE TABLE IF NOT EXISTS global_config(key TEXT PRIMARY KEY, value INTEGER NOT NULL);");
         } catch (Throwable e) {
             ServerConstants.LOGGER.e(e, "create database");
             if (allowRetry && (new File(DATABASE_PATH)).delete()) {
@@ -97,5 +100,40 @@ public class SuiDatabase {
         String selection = "uid=?";
         String[] selectionArgs = new String[]{String.valueOf(uid)};
         database.delete(UID_CONFIG_TABLE, selection, selectionArgs);
+    }
+
+    public static boolean readGlobalAutoGrant() {
+        SQLiteDatabase database = getDatabase();
+        if (database == null) {
+            return false;
+        }
+
+        try (Cursor cursor = database.query(GLOBAL_CONFIG_TABLE, new String[]{"value"}, "key=?",
+                new String[]{GLOBAL_AUTO_GRANT_KEY}, null, null, null)) {
+            return cursor != null && cursor.moveToFirst() && cursor.getInt(0) != 0;
+        } catch (Throwable e) {
+            ServerConstants.LOGGER.e(e, "read global auto grant");
+            return false;
+        }
+    }
+
+    public static boolean writeGlobalAutoGrant(boolean enabled) {
+        SQLiteDatabase database = getDatabase();
+        if (database == null) {
+            return false;
+        }
+
+        ContentValues values = new ContentValues();
+        values.put("key", GLOBAL_AUTO_GRANT_KEY);
+        values.put("value", enabled ? 1 : 0);
+        try {
+            if (database.update(GLOBAL_CONFIG_TABLE, values, "key=?", new String[]{GLOBAL_AUTO_GRANT_KEY}) <= 0) {
+                database.insertWithOnConflict(GLOBAL_CONFIG_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            }
+            return true;
+        } catch (Throwable e) {
+            ServerConstants.LOGGER.e(e, "write global auto grant");
+            return false;
+        }
     }
 }

@@ -47,9 +47,11 @@ public class SuiConfigManager extends ConfigManager {
 
 
     private final SuiConfig config;
+    private volatile boolean globalAutoGrantEnabled;
 
     public SuiConfigManager() {
         this.config = load();
+        this.globalAutoGrantEnabled = SuiDatabase.readGlobalAutoGrant();
     }
 
     private SuiConfig.PackageEntry findLocked(int uid) {
@@ -64,8 +66,35 @@ public class SuiConfigManager extends ConfigManager {
     @Nullable
     public SuiConfig.PackageEntry find(int uid) {
         synchronized (this) {
-            return findLocked(uid);
+            SuiConfig.PackageEntry entry = findLocked(uid);
+            if (entry != null && globalAutoGrantEnabled && entry.isDenied()) {
+                int flags = (entry.flags & ~SuiConfig.MASK_PERMISSION) | SuiConfig.FLAG_ALLOWED;
+                return new SuiConfig.PackageEntry(uid, flags);
+            }
+            return entry;
         }
+    }
+
+    public int findStoredFlags(int uid) {
+        synchronized (this) {
+            SuiConfig.PackageEntry entry = findLocked(uid);
+            return entry != null ? entry.flags : 0;
+        }
+    }
+
+    public boolean isGlobalAutoGrantEnabled() {
+        return globalAutoGrantEnabled;
+    }
+
+    public synchronized boolean setGlobalAutoGrantEnabled(boolean enabled) {
+        if (globalAutoGrantEnabled == enabled) {
+            return true;
+        }
+        if (!SuiDatabase.writeGlobalAutoGrant(enabled)) {
+            return false;
+        }
+        globalAutoGrantEnabled = enabled;
+        return true;
     }
 
     @Override

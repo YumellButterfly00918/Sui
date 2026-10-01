@@ -56,8 +56,11 @@ import androidx.annotation.OptIn;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dev.rikka.tools.refine.Refine;
 import moe.shizuku.server.IShizukuApplication;
@@ -114,6 +117,7 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
     private final int systemUiUid;
     private final int settingsUid;
     private IShizukuApplication systemUiApplication;
+    private final Set<Integer> globallyGrantedUids = ConcurrentHashMap.newKeySet();
 
     private final Object managerBinderLock = new Object();
     private final Logger flog = new Logger("Sui", "/cache/sui.log");
@@ -273,6 +277,9 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
             if (clientRecord == null) {
                 return;
             }
+            if (configManager.isGlobalAutoGrantEnabled()) {
+                globallyGrantedUids.add(callingUid);
+            }
         }
 
         int replyServerVersion = ShizukuApiConstants.SERVER_VERSION;
@@ -303,6 +310,14 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
 
     @Override
     public void showPermissionConfirmation(int requestCode, @NonNull ClientRecord clientRecord, int callingUid, int callingPid, int userId) {
+        if (configManager.isGlobalAutoGrantEnabled()) {
+            clientRecord.allowed = true;
+            globallyGrantedUids.add(callingUid);
+            clientRecord.dispatchRequestPermissionResult(requestCode, true);
+            LOGGER.i("global auto-grant: uid=%d package=%s", callingUid, clientRecord.packageName);
+            return;
+        }
+
         if (systemUiApplication != null) {
             try {
                 systemUiApplication.showPermissionConfirmation(callingUid, callingPid, clientRecord.packageName, requestCode);
@@ -626,9 +641,37 @@ public class SuiService extends Service<SuiUserServiceManager, SuiClientManager,
         }
     }
 
+    private synchronized void setGlobalAutoGrantEnabled(boolean enabled) {
+        if (!configManager.setGlobalAutoGrantEnabled(enabled)) {
+            throw new IllegalStateException("Failed to persist global auto-grant state");
+        }
+        if (!enabled) {
+            for (int uid : new HashSet<>(globallyGrantedUids)) {
+                boolean individuallyAllowed = (configManager.findStoredFlags(uid) & SuiConfig.FLAG_ALLOWED) != 0;
+                for (ClientRecord record : clientManager.findClients(uid)) {
+                    record.allowed = individuallyAllowed;
+                }
+            }
+            globallyGrantedUids.clear();
+        }
+    }
+
     @Override
     public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-        if (code == ServerConstants.BINDER_TRANSACTION_getDiagnosticBuildId) {
+        if (code == ServerConstants.BINDER_TRANSACTION_getGlobalAutoGrant) {
+            data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
+            enforceManagerPermission("getGlobalAutoGrant");
+            reply.writeNoException();
+            reply.writeInt(configManager.isGlobalAutoGrantEnabled() ? 1 : 0);
+            return true;
+        } else if (code == ServerConstants.BINDER_TRANSACTION_setGlobalAutoGrant) {
+            data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
+            enforceManagerPermission("setGlobalAutoGrant");
+            setGlobalAutoGrantEnabled(data.readInt() != 0);
+            reply.writeNoException();
+            reply.writeInt(configManager.isGlobalAutoGrantEnabled() ? 1 : 0);
+            return true;
+        } else if (code == ServerConstants.BINDER_TRANSACTION_getDiagnosticBuildId) {
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
             enforceManagerPermission("getDiagnosticBuildId");
             reply.writeNoException();
