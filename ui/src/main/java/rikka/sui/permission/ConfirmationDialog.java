@@ -155,7 +155,7 @@ public class ConfirmationDialog {
         binding.icon.setGravity(Gravity.CENTER);
         binding.icon.setText("#");
         binding.icon.setTextSize(24);
-        binding.icon.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        binding.icon.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         binding.icon.setTextColor(Color.WHITE);
         binding.icon.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
         int iconPadding = Math.round(12 * density);
