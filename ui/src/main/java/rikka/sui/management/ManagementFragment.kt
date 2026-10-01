@@ -23,12 +23,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.util.TypedValue
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -92,17 +89,9 @@ class ManagementFragment : AppFragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        val actionView = TextView(requireContext()).apply {
-            text = "Allowed"
-            gravity = Gravity.CENTER
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-            visibility = View.VISIBLE
-            isClickable = true
-            isFocusable = true
-            setPadding(0, 0, 0, 0)
-            setOnClickListener { toggleGlobalAutoGrant() }
-        }
+        val actionView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.management_global_auto_grant_action, null) as TextView
+        actionView.setOnClickListener { toggleGlobalAutoGrant() }
         menu.add(Menu.NONE, MENU_GLOBAL_AUTO_GRANT, Menu.NONE, "Allowed").apply {
             isVisible = true
             setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT)
