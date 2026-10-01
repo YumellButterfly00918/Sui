@@ -25,15 +25,16 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
+import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
 import rikka.core.res.resolveColor
@@ -51,10 +52,6 @@ import rikka.sui.util.BridgeServiceClient
 import rikka.widget.borderview.BorderView.OnBorderVisibilityChangedListener
 
 class ManagementFragment : AppFragment() {
-
-    private companion object {
-        const val MENU_GLOBAL_AUTO_GRANT = 0x535549
-    }
 
     private var _binding: ManagementBinding? = null
     private val binding: ManagementBinding get() = _binding!!
@@ -82,28 +79,69 @@ class ManagementFragment : AppFragment() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
+    private fun attachGlobalAutoGrantAction() {
+        val toolbar = requireAppActivity().findViewById<Toolbar>(R.id.toolbar)
         val actionView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.management_global_auto_grant_action, null) as TextView
+            .inflate(R.layout.management_global_auto_grant_action, toolbar, false) as TextView
         actionView.setOnClickListener { toggleGlobalAutoGrant() }
-        menu.add(Menu.NONE, MENU_GLOBAL_AUTO_GRANT, Menu.NONE, "Allowed").apply {
-            isVisible = true
-            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT)
-            setActionView(actionView)
-        }
+        toolbar.addView(
+            actionView,
+            Toolbar.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.END or Gravity.CENTER_VERTICAL
+            )
+        )
         globalAutoGrantAction = actionView
+        actionView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            alignGlobalAutoGrantAction()
+        }
         try {
             globalAutoGrantEnabled = BridgeServiceClient.getGlobalAutoGrantEnabled()
         } catch (e: Throwable) {
             Log.e("SuiSettings", "Failed to read global auto-grant state", e)
         }
         updateGlobalAutoGrantAppearance()
+    }
+
+    private fun alignGlobalAutoGrantAction() {
+        val actionView = globalAutoGrantAction ?: return
+        val toolbar = actionView.parent as? Toolbar ?: return
+        val list = _binding?.list ?: return
+        val rowText = (0 until list.childCount)
+            .asSequence()
+            .mapNotNull { index ->
+                list.getChildAt(index)
+                    .findViewById<Spinner>(android.R.id.button1)
+                    ?.selectedView as? TextView
+            }
+            .firstOrNull { it.isLaidOut && it.width > 0 } ?: return
+
+        val rowLocation = IntArray(2)
+        val actionLocation = IntArray(2)
+        rowText.getLocationOnScreen(rowLocation)
+        actionView.getLocationOnScreen(actionLocation)
+
+        val isRtl = toolbar.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        val targetEnd = if (isRtl) {
+            rowLocation[0] + rowText.paddingStart
+        } else {
+            rowLocation[0] + rowText.width - rowText.paddingEnd
+        }
+        val actionEnd = if (isRtl) {
+            actionLocation[0] + actionView.paddingStart
+        } else {
+            actionLocation[0] + actionView.width - actionView.paddingEnd
+        }
+        val adjustment = if (isRtl) targetEnd - actionEnd else actionEnd - targetEnd
+        if (adjustment == 0) return
+
+        val layoutParams = actionView.layoutParams as Toolbar.LayoutParams
+        val marginEnd = (layoutParams.marginEnd + adjustment).coerceAtLeast(0)
+        if (marginEnd != layoutParams.marginEnd) {
+            layoutParams.marginEnd = marginEnd
+            actionView.layoutParams = layoutParams
+        }
     }
 
     private fun toggleGlobalAutoGrant() {
@@ -136,6 +174,7 @@ class ManagementFragment : AppFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val context = view.context
+        attachGlobalAutoGrantAction()
 
         binding.list.apply {
             borderVisibilityChangedListener =
@@ -204,6 +243,10 @@ class ManagementFragment : AppFragment() {
     }
 
     override fun onDestroyView() {
+        globalAutoGrantAction?.let { actionView ->
+            (actionView.parent as? Toolbar)?.removeView(actionView)
+        }
+        globalAutoGrantAction = null
         super.onDestroyView()
         _binding = null
     }
@@ -232,6 +275,7 @@ class ManagementFragment : AppFragment() {
 
         data.data?.let {
             adapter.updateData(it)
+            binding.list.doOnNextLayout { alignGlobalAutoGrantAction() }
         }
     }
 }
