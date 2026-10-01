@@ -162,7 +162,7 @@ public class ConfirmationDialog {
         binding.title.setTextColor(primaryTextColor);
         binding.button1.setTextColor(Color.WHITE);
         binding.button2.setTextColor(Color.WHITE);
-        binding.button3.setTextColor(Color.parseColor("#8D1D19"));
+        binding.button3.setTextColor(Color.WHITE);
         binding.button1.setText(resources.getString(R.string.grant_dialog_button_allow_always));
         binding.button2.setText(resources.getString(R.string.grant_dialog_button_allow_one_time));
         binding.button3.setText(resources.getString(R.string.grant_dialog_button_deny_and_dont_ask_again));
@@ -176,6 +176,7 @@ public class ConfirmationDialog {
         binding.button1.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
         binding.button2.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
         binding.button3.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
+        binding.button3.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#8D1D19")));
 
         binding.button1.setOnClickListener(v -> {
             setResult(requestUid, requestPid, requestCode, true, false);
