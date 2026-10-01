@@ -30,7 +30,6 @@ import android.content.pm.PackageManagerHidden;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Binder;
@@ -42,8 +41,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import java.util.Objects;
 
@@ -152,11 +151,9 @@ public class ConfirmationDialog {
         LinearLayout.LayoutParams iconLayoutParams = new LinearLayout.LayoutParams(iconSize, iconSize);
         iconLayoutParams.gravity = Gravity.CENTER_HORIZONTAL;
         binding.icon.setLayoutParams(iconLayoutParams);
-        binding.icon.setGravity(Gravity.CENTER);
-        binding.icon.setText("#");
-        binding.icon.setTextSize(24);
-        binding.icon.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        binding.icon.setTextColor(Color.WHITE);
+        binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
+        binding.icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        binding.icon.setColorFilter(Color.WHITE);
         binding.icon.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
         int iconPadding = Math.round(12 * density);
         binding.icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
