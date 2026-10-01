@@ -151,12 +151,16 @@ public class ConfirmationDialog {
         LinearLayout.LayoutParams iconLayoutParams = new LinearLayout.LayoutParams(iconSize, iconSize);
         iconLayoutParams.gravity = Gravity.CENTER_HORIZONTAL;
         binding.icon.setLayoutParams(iconLayoutParams);
-        binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
+        try {
+            binding.icon.setImageDrawable(pm.getApplicationIcon(requestPackageName));
+        } catch (Throwable e) {
+            LOGGER.e("getApplicationIcon");
+            binding.icon.setImageDrawable(resources.getDrawable(R.drawable.ic_su_24, theme));
+        }
         binding.icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        binding.icon.setColorFilter(Color.WHITE);
-        binding.icon.setBackground(createRoundedBackground(Color.parseColor("#2F4577"), 16 * density));
-        int iconPadding = Math.round(12 * density);
-        binding.icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
+        binding.icon.setColorFilter(null);
+        binding.icon.setBackground(null);
+        binding.icon.setPadding(0, 0, 0, 0);
         binding.title.setText(HtmlCompat.fromHtml(
                 String.format(resources.getString(R.string.permission_warning_template), label, resources.getString(R.string.permission_description))));
         binding.title.setTextColor(primaryTextColor);
