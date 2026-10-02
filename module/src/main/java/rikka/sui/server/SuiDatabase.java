@@ -78,16 +78,23 @@ public class SuiDatabase {
     public static void updateUid(int uid, int flags) {
         SQLiteDatabase database = getDatabase();
         if (database == null) {
-            return;
+            throw new IllegalStateException("Unable to open Sui database for UID update");
         }
 
         ContentValues values = new ContentValues();
         values.put("uid", uid);
         values.put("flags", flags);
-        String selection = "uid=?";
-        String[] selectionArgs = new String[]{String.valueOf(uid)};
-        if (database.update(UID_CONFIG_TABLE, values, selection, selectionArgs) <= 0) {
-            database.insertWithOnConflict(UID_CONFIG_TABLE, (String) null, values, SQLiteDatabase.CONFLICT_IGNORE);
+
+        database.beginTransaction();
+        try {
+            long rowId = database.insertWithOnConflict(
+                    UID_CONFIG_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            if (rowId < 0) {
+                throw new IllegalStateException("Unable to persist flags for UID " + uid);
+            }
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
         }
     }
 

@@ -41,8 +41,29 @@ static int sui_main(int argc, char **argv) {
     if (access("/data/adb/sui", F_OK) != 0) {
         mkdir("/data/adb/sui", 0700);
     }
-    chmod("/data/adb/sui", 0700);
-    chown("/data/adb/sui", 0, 0);
+    if (chown("/data/adb/sui", 1000, 1000) != 0) {
+        PLOGE("chown /data/adb/sui");
+    }
+    if (chmod("/data/adb/sui", 0700) != 0) {
+        PLOGE("chmod /data/adb/sui");
+    }
+
+    const char *database_files[] = {
+            "/data/adb/sui/sui.db",
+            "/data/adb/sui/sui.db-wal",
+            "/data/adb/sui/sui.db-shm",
+            "/data/adb/sui/sui.db-journal",
+    };
+    for (const char *database_file : database_files) {
+        if (access(database_file, F_OK) == 0) {
+            if (chown(database_file, 1000, 1000) != 0) {
+                PLOGE("chown %s", database_file);
+            }
+            if (chmod(database_file, 0600) != 0) {
+                PLOGE("chmod %s", database_file);
+            }
+        }
+    }
 
     auto root_path = argv[1];
 

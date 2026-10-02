@@ -26,8 +26,13 @@ check_magisk_version
 check_android_version
 check_arch
 
-mkdir $ROOT_PATH
-set_perm "$ROOT_PATH" 0 0 0700
+mkdir -p "$ROOT_PATH"
+set_perm "$ROOT_PATH" 1000 1000 0700
+for DB_FILE in "$ROOT_PATH/sui.db" "$ROOT_PATH/sui.db-wal" "$ROOT_PATH/sui.db-shm" "$ROOT_PATH/sui.db-journal"; do
+  if [ -e "$DB_FILE" ]; then
+    set_perm "$DB_FILE" 1000 1000 0600
+  fi
+done
 
 # Extract libs
 ui_print "- Extracting module files"

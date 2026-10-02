@@ -105,17 +105,22 @@ public class SuiConfigManager extends ConfigManager {
     public void update(int uid, int mask, int values) {
         synchronized (this) {
             SuiConfig.PackageEntry entry = findLocked(uid);
+            int newFlags;
             if (entry == null) {
-                entry = new SuiConfig.PackageEntry(uid, mask & values);
-                config.packages.add(entry);
+                newFlags = mask & values;
             } else {
-                int newValue = (entry.flags & ~mask) | (mask & values);
-                if (newValue == entry.flags) {
+                newFlags = (entry.flags & ~mask) | (mask & values);
+                if (newFlags == entry.flags) {
                     return;
                 }
-                entry.flags = newValue;
             }
-            SuiDatabase.updateUid(uid, entry.flags);
+
+            SuiDatabase.updateUid(uid, newFlags);
+            if (entry == null) {
+                config.packages.add(new SuiConfig.PackageEntry(uid, newFlags));
+            } else {
+                entry.flags = newFlags;
+            }
         }
     }
 
