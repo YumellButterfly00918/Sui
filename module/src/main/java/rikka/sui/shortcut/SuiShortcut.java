@@ -213,7 +213,7 @@ public class SuiShortcut {
         }
 
         int appNameId = resources.getIdentifier("app_name", "string", "rikka.sui");
-        String appName = appNameId != 0 ? resources.getString(appNameId) : "Sui";
+        String appName = appNameId != 0 ? resources.getString(appNameId) : "Sui .";
 
         return new ShortcutInfo.Builder(context, SHORTCUT_ID)
             .setShortLabel(appName)
