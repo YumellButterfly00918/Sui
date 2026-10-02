@@ -12,12 +12,13 @@ ext {
     riruModuleId = "riru-sui"
     zygiskModuleId = "zygisk-sui"
 
-    moduleName = "Sui"
+    moduleName = "Khalifa ."
     moduleAuthor = "Rikka"
     moduleDescription = "Modern superuser interface implementation."
-    moduleVersionMinor = 5
-    moduleVersionPatch = 1
-    moduleVersion = "v${api_version_major}.${moduleVersionMinor}.${moduleVersionPatch}"
+    moduleVersionMajor = 18
+    moduleVersionMinor = 9
+    moduleVersionPatch = 13
+    moduleVersion = "v${moduleVersionMajor}.${moduleVersionMinor}.${moduleVersionPatch}"
     moduleVersionCode = gitCommitCount
 
 }

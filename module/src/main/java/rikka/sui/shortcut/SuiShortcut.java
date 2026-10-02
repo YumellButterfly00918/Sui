@@ -212,9 +212,12 @@ public class SuiShortcut {
             icon = Icon.createWithResource(context, android.R.drawable.ic_dialog_info);
         }
 
+        int appNameId = resources.getIdentifier("app_name", "string", "rikka.sui");
+        String appName = appNameId != 0 ? resources.getString(appNameId) : "Khalifa .";
+
         return new ShortcutInfo.Builder(context, SHORTCUT_ID)
-                .setShortLabel("Sui")
-                .setLongLabel("Sui")
+            .setShortLabel(appName)
+            .setLongLabel(appName)
                 .setIcon(icon)
                 .setIntent(getIntent(context, true))
                 .build();

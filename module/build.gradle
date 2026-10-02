@@ -111,7 +111,6 @@ afterEvaluate {
         def variantLowered = variant.name.toLowerCase()
         def buildTypeCapped = variant.getBuildType().getName().capitalize()
         def buildTypeLowered = variant.getBuildType().getName().toLowerCase()
-        def flavorCapped = variantCapped.replaceFirst(buildTypeCapped, "")
         def flavorLowered = variantLowered.replaceFirst(buildTypeLowered, "")
 
         def zipName = "sui-${flavorLowered}-${moduleVersion}-${buildTypeLowered}.zip"
@@ -161,7 +160,7 @@ afterEvaluate {
                 include 'module.prop'
                 expand([
                         id         : (flavorLowered == "zygisk") ? zygiskModuleId : riruModuleId,
-                        name       : flavorCapped + " - " + moduleName,
+                        name       : moduleName,
                         version    : moduleVersion,
                         versionCode: moduleVersionCode.toString(),
                         author     : moduleAuthor,

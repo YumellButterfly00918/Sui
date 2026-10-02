@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Khalifa .</string>
     <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
     <string name="permission_description">have the full access of the device</string>
     <string name="grant_dialog_button_allow_always">Allow all the time</string>

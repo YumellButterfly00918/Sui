@@ -41,13 +41,14 @@ public class SuiActivity extends AppActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        setTitle("Sui");
+        String appName = getString(R.string.app_name);
+        setTitle(appName);
         Objects.requireNonNull(getSupportActionBar()).setSubtitle(BuildConfig.VERSION_NAME);
 
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ManagementFragment())
                 .commit();
 
-        setTaskDescription(new ActivityManager.TaskDescription("Sui"));
+        setTaskDescription(new ActivityManager.TaskDescription(appName));
     }
 }
