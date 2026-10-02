@@ -20,7 +20,6 @@ extract "$ZIPFILE" 'util_functions.sh' "$TMPDIR"
 
 FLAVOR=@FLAVOR@
 ROOT_PATH="/data/adb/sui"
-DATABASE_PATH="/data/system/sui"
 
 enforce_install_from_magisk_app
 check_magisk_version
@@ -28,14 +27,7 @@ check_android_version
 check_arch
 
 mkdir -p "$ROOT_PATH"
-set_perm "$ROOT_PATH" 1000 1000 0700
-mkdir -p "$DATABASE_PATH"
-set_perm "$DATABASE_PATH" 1000 1000 0700
-for DB_FILE in "$DATABASE_PATH/sui.db" "$DATABASE_PATH/sui.db-wal" "$DATABASE_PATH/sui.db-shm" "$DATABASE_PATH/sui.db-journal"; do
-  if [ -e "$DB_FILE" ]; then
-    set_perm "$DB_FILE" 1000 1000 0600
-  fi
-done
+set_perm "$ROOT_PATH" 0 0 0700
 
 # Extract libs
 ui_print "- Extracting module files"

@@ -17,7 +17,7 @@ public class SuiDatabase {
     }
 
     static {
-        DATABASE_PATH = (new File("/data/system/sui/sui.db")).getPath();
+        DATABASE_PATH = (new File("/data/adb/sui/sui.db")).getPath();
     }
 
     private static final String DATABASE_PATH;
