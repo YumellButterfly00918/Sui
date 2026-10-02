@@ -12,7 +12,7 @@ ext {
     riruModuleId = "riru-sui"
     zygiskModuleId = "zygisk-sui"
 
-    moduleName = "Zygisk - sui"
+    moduleName = "Zygisk - sui ."
     moduleAuthor = "khalifa ."
     moduleDescription = "Modern superuser interface implementation."
     moduleVersionMajor = 18
