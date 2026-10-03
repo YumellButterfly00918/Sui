@@ -56,7 +56,7 @@ class ManagementFragment : AppFragment() {
     private var _binding: ManagementBinding? = null
     private val binding: ManagementBinding get() = _binding!!
 
-    private val viewModel by viewModels { ManagementViewModel().apply { sync(requireAppActivity()) } }
+    private val viewModel by viewModels { ManagementViewModel().apply { reload(requireAppActivity()) } }
     private val adapter = ManagementAdapter()
     private var globalAutoGrantEnabled = false
     private var globalAutoGrantAction: TextView? = null
@@ -256,6 +256,7 @@ class ManagementFragment : AppFragment() {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
             list.isVisible = true
+            loading.isVisible = false
         }
 
         val detail = e.localizedMessage ?: e.javaClass.simpleName
@@ -271,6 +272,7 @@ class ManagementFragment : AppFragment() {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
             list.isVisible = true
+            loading.isVisible = false
         }
 
         data.data?.let {

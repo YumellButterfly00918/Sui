@@ -42,15 +42,12 @@ class ManagementViewModel : ViewModel() {
 
     private val fullList = ArrayList<AppInfo>()
     private var reloadJob: Job? = null
-    @Volatile
-    private var hasPublishedList = false
 
     val appList = MutableLiveData<Resource<List<AppInfo>>>(null)
     val syncCompleted = MutableLiveData<Unit>()
 
     private fun handleList() {
         val list = fullList.sortedWith(AppInfoComparator()).toList()
-        hasPublishedList = true
         val result = Resource.success(list)
         if (Looper.myLooper() == Looper.getMainLooper()) {
             appList.value = result
@@ -82,34 +79,34 @@ class ManagementViewModel : ViewModel() {
     }
 
     private fun reload(context: Context, silent: Boolean) {
-        if (!hasPublishedList) {
-            AppInfoCache.read(context)?.let {
-                fullList.clear()
-                fullList.addAll(it)
-                handleList()
-            }
-        }
-
         reloadJob?.cancel()
         reloadJob = viewModelScope.launch(Dispatchers.IO) {
             var stage = "requesting applications from the Sui service"
             try {
                 val pm = context.packageManager
-                val result = BridgeServiceClient.getApplications(-1 /* ALL */)
-                stage = "loading labels for ${result.size} applications"
-                result.forEach {
-                    it.label = it.packageInfo.applicationInfo.loadLabel(pm).toString()
+                val cachedApps = AppInfoCache.read(context).orEmpty().associateBy {
+                    it.packageInfo.packageName to it.packageInfo.applicationInfo.uid
                 }
-
-                if (!hasPublishedList || !sameApps(fullList, result)) {
-                    stage = "loading icons for ${result.size} applications"
-                    val iconSize = context.resources.getDimensionPixelSize(R.dimen.expected_app_icon_max_size)
-                    result.forEach {
-                        val appInfo = it.packageInfo.applicationInfo
-                        it.icon = try {
+                val result = BridgeServiceClient.getApplications(-1 /* ALL */)
+                val iconSize = context.resources.getDimensionPixelSize(R.dimen.expected_app_icon_max_size)
+                stage = "loading metadata for ${result.size} applications"
+                result.forEach {
+                    val appInfo = it.packageInfo.applicationInfo
+                    val cached = cachedApps[appInfo.packageName to appInfo.uid]
+                    val cacheMatchesPackage = cached?.packageInfo?.lastUpdateTime == it.packageInfo.lastUpdateTime
+                    it.label = if (cacheMatchesPackage) {
+                        cached?.label
+                    } else {
+                        appInfo.loadLabel(pm).toString()
+                    }
+                    it.icon = if (cacheMatchesPackage) {
+                        cached?.icon
+                    } else {
+                        stage = "loading icon for ${appInfo.packageName}"
+                        try {
                             val bitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
                             val drawable = appInfo.loadIcon(pm)
-                            drawable.setBounds(0, 0, iconSize, iconSize)
+                            drawable.setBounds(0, 0, bitmap.width, bitmap.height)
                             drawable.draw(Canvas(bitmap))
                             bitmap
                         } catch (e: Throwable) {
@@ -117,14 +114,14 @@ class ManagementViewModel : ViewModel() {
                             null
                         }
                     }
-
-                    fullList.clear()
-                    fullList.addAll(result)
-                    AppInfoCache.write(context, fullList)
-
-                    Log.i("SuiSettings", "Loaded metadata for ${result.size} applications")
-                    handleList()
                 }
+
+                fullList.clear()
+                fullList.addAll(result)
+                AppInfoCache.write(context, fullList)
+
+                Log.i("SuiSettings", "Loaded metadata and permission flags for ${result.size} applications")
+                handleList()
             } catch (e: CancellationException) {
 
             } catch (e: Throwable) {
@@ -135,21 +132,6 @@ class ManagementViewModel : ViewModel() {
             } finally {
                 syncCompleted.postValue(Unit)
             }
-        }
-    }
-
-    private fun sameApps(current: List<AppInfo>, fresh: List<AppInfo>): Boolean {
-        if (current.size != fresh.size) return false
-
-        val currentByIdentity = current.associateBy {
-            it.packageInfo.packageName to it.packageInfo.applicationInfo.uid
-        }
-        return fresh.all { app ->
-            val identity = app.packageInfo.packageName to app.packageInfo.applicationInfo.uid
-            val cached = currentByIdentity[identity] ?: return@all false
-            cached.flags == app.flags
-                    && cached.label?.toString() == app.label?.toString()
-                    && cached.packageInfo.lastUpdateTime == app.packageInfo.lastUpdateTime
         }
     }
 }
