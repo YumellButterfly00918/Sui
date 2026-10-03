@@ -10,6 +10,7 @@
     <string name="brackets_format">%1$s (%2$s)</string>
     <string name="management_title">Superuser management</string>
     <string name="management_load_error">Failed to load app list: %1$s</string>
+    <string name="permission_update_failed">Failed to save permission change</string>
     <string name="close">Close</string>
     <string name="permission_allowed">Allowed</string>
     <string name="permission_denied">Denied</string>

@@ -17,7 +17,7 @@ public class SuiDatabase {
     }
 
     static {
-        DATABASE_PATH = (new File("/data/adb/sui/sui.db")).getPath();
+        DATABASE_PATH = (new File("/data/system/sui/sui.db")).getPath();
     }
 
     private static final String DATABASE_PATH;
@@ -26,28 +26,21 @@ public class SuiDatabase {
     private static final String GLOBAL_AUTO_GRANT_KEY = "global_auto_grant";
     private static SQLiteDatabase databaseInternal;
 
-    private static SQLiteDatabase createDatabase(boolean allowRetry) {
-        SQLiteDatabase database;
+    private static SQLiteDatabase createDatabase() {
         try {
-            database = SQLiteDataBaseRemoteCompat.openDatabase(DATABASE_PATH, null);
+            SQLiteDatabase database = SQLiteDataBaseRemoteCompat.openDatabase(DATABASE_PATH, null);
             database.execSQL("CREATE TABLE IF NOT EXISTS uid_configs(uid INTEGER PRIMARY KEY, flags INTEGER);");
             database.execSQL("CREATE TABLE IF NOT EXISTS global_config(key TEXT PRIMARY KEY, value INTEGER NOT NULL);");
-        } catch (Throwable e) {
-            ServerConstants.LOGGER.e(e, "create database");
-            if (allowRetry && (new File(DATABASE_PATH)).delete()) {
-                ServerConstants.LOGGER.i("delete database and retry");
-                database = createDatabase(false);
-            } else {
-                database = null;
-            }
+            return database;
+        } catch (RuntimeException e) {
+            ServerConstants.LOGGER.e(e, "create database at %s", DATABASE_PATH);
+            return null;
         }
-
-        return database;
     }
 
     private static SQLiteDatabase getDatabase() {
         if (databaseInternal == null) {
-            databaseInternal = createDatabase(true);
+            databaseInternal = createDatabase();
         }
         return databaseInternal;
     }

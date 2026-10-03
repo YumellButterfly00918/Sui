@@ -29,6 +29,7 @@ import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.TextView
+import android.widget.Toast
 import kotlinx.coroutines.Job
 import rikka.core.res.resolveColor
 import rikka.core.res.resolveColorStateList
@@ -137,15 +138,22 @@ class ManagementAppItemViewHolder(private val binding: ManagementAppItemBinding)
                 2 -> SuiConfig.FLAG_HIDDEN
                 else -> 0
             }
+
+            if (position != parent.selectedItemPosition
+                || newValue == (data.flags and SuiConfig.MASK_PERMISSION)) {
+                return
+            }
+
             try {
-                BridgeServiceClient.getService()
-                    .updateFlagsForUid(data.packageInfo.applicationInfo.uid, SuiConfig.MASK_PERMISSION, newValue)
-            } catch (e: Throwable) {
-                Log.e("SuiSettings", "updateFlagsForUid", e)
+                BridgeServiceClient.getService().updateFlagsForUid(uid, SuiConfig.MASK_PERMISSION, newValue)
+            } catch (e: Exception) {
+                Log.e("SuiSettings", "Failed to persist permission flags for uid $uid", e)
+                syncViewStateForFlags()
+                Toast.makeText(itemView.context, R.string.permission_update_failed, Toast.LENGTH_SHORT).show()
                 return
             }
             data.flags = data.flags and SuiConfig.MASK_PERMISSION.inv() or newValue
-            parent.setSelection(position)
+            Log.i("SuiSettings", "Persisted permission flags for uid $uid: $newValue")
             syncViewStateForFlags()
         }
 
@@ -174,10 +182,10 @@ class ManagementAppItemViewHolder(private val binding: ManagementAppItemBinding)
         }
         pkg.text = ai.packageName
 
+        spinner.onItemSelectedListener = null
         spinner.adapter = optionsAdapter
-        spinner.onItemSelectedListener = onItemSelectedListener
-
         syncViewStateForFlags()
+        spinner.onItemSelectedListener = onItemSelectedListener
     }
 
     override fun onBind(payloads: List<Any>) {

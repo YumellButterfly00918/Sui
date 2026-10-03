@@ -9,6 +9,7 @@
     <string name="brackets_format">%1$s（%2$s）</string>
     <string name="management_title">超级用户管理</string>
     <string name="management_load_error">无法加载应用列表：%1$s</string>
+    <string name="permission_update_failed">无法保存权限更改</string>
     <string name="close">关闭</string>
     <string name="permission_allowed">允许</string>
     <string name="permission_denied">拒绝</string>

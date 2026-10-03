@@ -49,17 +49,29 @@ static int sui_main(int argc, char **argv) {
         PLOGE("chmod /data/adb/sui");
     }
 
+    const char *database_directory = "/data/system/sui";
+    if (access(database_directory, F_OK) != 0 && mkdir(database_directory, 0700) != 0) {
+        PLOGE("mkdir %s", database_directory);
+    }
+    if (chown(database_directory, 1000, 1000) != 0) {
+        PLOGE("chown %s", database_directory);
+    }
+    if (chmod(database_directory, 0700) != 0) {
+        PLOGE("chmod %s", database_directory);
+    }
+
     const char *legacy_database_files[] = {
-            "/data/system/sui/sui.db",
-            "/data/system/sui/sui.db-wal",
-            "/data/system/sui/sui.db-shm",
-            "/data/system/sui/sui.db-journal",
-    };
-    const char *database_files[] = {
             "/data/adb/sui/sui.db",
             "/data/adb/sui/sui.db-wal",
             "/data/adb/sui/sui.db-shm",
             "/data/adb/sui/sui.db-journal",
+    };
+
+    const char *database_files[] = {
+            "/data/system/sui/sui.db",
+            "/data/system/sui/sui.db-wal",
+            "/data/system/sui/sui.db-shm",
+            "/data/system/sui/sui.db-journal",
     };
 
     if (access(database_files[0], F_OK) != 0 && access(legacy_database_files[0], F_OK) == 0) {
@@ -73,7 +85,7 @@ static int sui_main(int argc, char **argv) {
 
     for (const char *database_file : database_files) {
         if (access(database_file, F_OK) == 0) {
-            if (chown(database_file, 0, 0) != 0) {
+            if (chown(database_file, 1000, 1000) != 0) {
                 PLOGE("chown %s", database_file);
             }
             if (chmod(database_file, 0600) != 0) {

@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Store permission settings in `/data/system/sui` with access for `system_server`, migrating existing database files from `/data/adb/sui`.
+
 ### v13.5.1 (2023-09-19)
 
 - Works on Android 14
