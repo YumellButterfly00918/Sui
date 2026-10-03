@@ -256,7 +256,6 @@ class ManagementFragment : AppFragment() {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
             list.isVisible = true
-            loading.isVisible = false
         }
 
         val detail = e.localizedMessage ?: e.javaClass.simpleName
@@ -272,7 +271,6 @@ class ManagementFragment : AppFragment() {
             swipeRefresh.isEnabled = true
             swipeRefresh.isRefreshing = false
             list.isVisible = true
-            loading.isVisible = false
         }
 
         data.data?.let {
